@@ -22,7 +22,7 @@ class ProfileData {
         $profileUsername = $this->getProfileUsername();
         $query->execute();
 
-        return $query->rowCount() != 0;
+        return $query->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
     public function getCoverPhoto() {

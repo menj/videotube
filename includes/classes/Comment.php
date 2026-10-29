@@ -124,7 +124,7 @@
     
         $query->execute();
         
-        return $query->rowCount() > 0;
+        return $query->fetch(PDO::FETCH_ASSOC) !== false;
      }
 
         public function wasDisLiked() {
@@ -137,7 +137,7 @@
 
             $query->execute();
             
-            return $query->rowCount() > 0;
+            return $query->fetch(PDO::FETCH_ASSOC) !== false;
         }
 
        public function getLikes(){

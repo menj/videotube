@@ -61,7 +61,7 @@ class User {
 
         $query->execute();
 
-        return $query->rowCount() > 0;
+        return $query->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
     //subscribers count
