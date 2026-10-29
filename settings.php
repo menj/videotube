@@ -7,6 +7,7 @@ require_once("includes/classes/Constants.php");
 
 if(!User::isLoggedIn()) {
     header("Location: signIn.php");
+    exit;
 }
 
 $detailsMessage = "";

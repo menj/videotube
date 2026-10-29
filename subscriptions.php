@@ -3,6 +3,7 @@ require_once("includes/header.php");
 
 if(!User::isLoggedIn()) {
     header("Location: signIn.php");
+    exit;
 }
 
 $subscriptionsProvider = new SubscriptionsProvider($conn, $userLoggedInObj);

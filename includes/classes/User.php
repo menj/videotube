@@ -11,7 +11,10 @@ class User {
         $query->bindParam(":un", $username);
         $query->execute();
    
-        $this->sqlData = $query->fetch(PDO::FETCH_ASSOC);
+        $this->sqlData = $query->fetch(PDO::FETCH_ASSOC) ?: [
+            'username' => '', 'firstName' => '', 'lastName' => '', 'email' => '',
+            'profilePic' => 'assets/images/profilePictures/default.png', 'singUpDate' => '',
+        ];
       
     }
 
@@ -44,14 +47,14 @@ class User {
     }  
     
     public function getSignUpDate() {
-        return $this->sqlData["signUpDate"];
+        return $this->sqlData["singUpDate"];
     }
 
     //subscribers methods
 
     public function isSubscribedTo($userTo){
         $query = $this->conn->prepare("SELECT * FROM subscribers WHERE userTo = :userTo AND userFrom = :userFrom");
-        $query->bindParam(":userTo", $userTO);
+        $query->bindParam(":userTo", $userTo);
         $query->bindParam(":userFrom", $username);
 
         $username = $this->getUsername();

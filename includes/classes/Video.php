@@ -16,6 +16,7 @@ class Video {
             $query->bindParam(":id", $input);
             $query->execute();
             $this->sqlData = $query->fetch(PDO::FETCH_ASSOC);
+            if ($this->sqlData === false) throw new OutOfBoundsException('Video not found');
         }           
     }
 
@@ -79,7 +80,7 @@ class Video {
           $videoId = $this->getVideoId();
           $query->execute();
 
-          return $query->fetchColumn();
+          return $query->fetchColumn() ?: "assets/images/icons/VideoTubeLogo.png";
     }
 
     public function increamentViews(){
@@ -108,7 +109,7 @@ class Video {
     }
 
     public function getVideoDisLikes(){ 
-        $query = $this->conn->prepare("SELECT COUNT(*) AS 'count' from DisLikes WHERE videoId = :videoId");
+        $query = $this->conn->prepare("SELECT COUNT(*) AS 'count' from dislikes WHERE videoId = :videoId");
         $query->bindParam(":videoId",$videoId);
  
         $videoId = $this->getVideoId();
@@ -137,7 +138,7 @@ class Video {
             return json_encode($result);
         }
         else{
-            $query = $this->conn->prepare("DELETE FROM DisLikes WHERE username = :username AND videoId = :videoId");
+            $query = $this->conn->prepare("DELETE FROM dislikes WHERE username = :username AND videoId = :videoId");
             $query->bindParam(":username", $username);
             $query->bindParam(":videoId", $videoId);
 

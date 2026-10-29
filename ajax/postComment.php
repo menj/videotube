@@ -5,7 +5,7 @@
    include("../includes/classes/User.php");
 
    if(isset($_POST["commentText"]) && isset($_POST["postedBy"]) && isset($_POST["videoId"])){
-       $userLoggedInObj = new User($conn, $_SESSION["userLoggedIn"]);
+       $userLoggedInObj = new User($conn, ($_SESSION["userLoggedIn"] ?? ""));
        
        //inserting into database
        $query = $conn->prepare("INSERT INTO comments(postedBy, videoId, responseTo, body)
