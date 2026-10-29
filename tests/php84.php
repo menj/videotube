@@ -66,4 +66,14 @@ foreach (['FormString','FormUser','FormEmail','FormPassword'] as $name) {
     $method = 'sanitizing' . $name;
     check(is_string(FormSanitizer::$method('Example')), 'Form sanitizer ' . $name);
 }
+$guestVideo = new Video($db,1,$guest);
+$guestComment = new Comment($db,['id'=>1],$guest,1);
+foreach ([$guestVideo, $guestComment] as $subject) {
+    foreach (['like','disLike'] as $method) {
+        $result = json_decode($subject->$method(),true);
+        check(isset($result['error']) && http_response_code() === 403, 'Guest votes rejected');
+    }
+}
+check((int)$db->query('SELECT COUNT(*) FROM likes')->fetchColumn() === 0, 'Guest likes do not write');
+check((int)$db->query('SELECT COUNT(*) FROM dislikes')->fetchColumn() === 0, 'Guest dislikes do not write');
 echo "$count PHP compatibility checks passed on " . PHP_VERSION . "\n";

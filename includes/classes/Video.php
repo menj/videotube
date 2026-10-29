@@ -122,6 +122,10 @@ class Video {
      }
 
      public function like(){
+        if ($this->userLoggedInObj->getUsername() === '') {
+            http_response_code(403);
+            return json_encode(['error' => 'Sign in to vote.']);
+        }
         $videoId = $this->getVideoId();
         $username = $this->userLoggedInObj->getUsername();
         if($this->wasLiked()){
@@ -160,6 +164,10 @@ class Video {
      }
 
      public function disLike(){
+        if ($this->userLoggedInObj->getUsername() === '') {
+            http_response_code(403);
+            return json_encode(['error' => 'Sign in to vote.']);
+        }
         $videoId = $this->getVideoId();
         $username = $this->userLoggedInObj->getUsername();
         if($this->wasDisLiked()){

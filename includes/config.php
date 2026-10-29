@@ -7,6 +7,6 @@ date_default_timezone_set('Asia/Kolkata');
 $conn = new PDO(
     getenv('VIDEOTUBE_DSN') ?: 'mysql:host=localhost;dbname=VideoTube;charset=utf8mb4',
     getenv('VIDEOTUBE_DB_USER') ?: 'root',
-    getenv('VIDEOTUBE_DB_PASSWORD') ?: '',
+    getenv('VIDEOTUBE_DB_PASSWORD') !== false ? getenv('VIDEOTUBE_DB_PASSWORD') : '',
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );

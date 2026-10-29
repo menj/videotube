@@ -161,6 +161,10 @@
        }
 
        public function like(){
+        if ($this->userLoggedInObj->getUsername() === '') {
+            http_response_code(403);
+            return json_encode(['error' => 'Sign in to vote.']);
+        }
         $commentId = $this->getId();
         $username = $this->userLoggedInObj->getUsername();
         if($this->wasLiked()){
@@ -192,6 +196,10 @@
      }
 
      public function disLike(){
+        if ($this->userLoggedInObj->getUsername() === '') {
+            http_response_code(403);
+            return json_encode(['error' => 'Sign in to vote.']);
+        }
         $commentId = $this->getId();
         $username = $this->userLoggedInObj->getUsername();
         if($this->wasDisLiked()){
