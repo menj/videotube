@@ -9,6 +9,15 @@ function requireLogin(): string {
     if (!is_string($user) || $user === '') { http_response_code(403); exit('Sign in to continue.'); }
     return $user;
 }
+function startAuthenticatedSession(PDO $db, string $username): void {
+    $q=$db->prepare('SELECT username,password FROM users WHERE username=?');
+    $q->execute([$username]); $account=$q->fetch(PDO::FETCH_ASSOC);
+    if (!$account) throw new RuntimeException('Account no longer exists.');
+    session_regenerate_id(true);
+    $_SESSION['userLoggedIn']=$account['username'];
+    $_SESSION['authVersion']=hash('sha256',$account['password']);
+    $_SESSION['csrf']=bin2hex(random_bytes(32));
+}
 function applicationSecurity(): void {
     ini_set('display_errors','0');
     set_exception_handler(function(Throwable $error) {

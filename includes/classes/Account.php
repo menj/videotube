@@ -176,7 +176,7 @@ class Account {
             return;
         }
 
-        if(strlen($pw) > 72 || strlen($pw) < 12) $this->errorArray[] = Constants::$passwordLength;
+        if(strlen($pw) > 72 || strlen($pw) < 12 || str_contains($pw, "\0")) $this->errorArray[] = Constants::$passwordLength;
     }
 
     public function getError($error) {

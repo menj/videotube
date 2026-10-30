@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/ajax.php';
    
    require_once("../includes/config.php");
 
-   if(isset($_POST["userTo"]) && isset($_POST["userFrom"])){
+   if(isset($_POST["userTo"])){
        $userTo = inputText('userTo',$_POST);
        $userFrom = requireLogin();
        if ($userTo === $userFrom) { http_response_code(422); exit; }
@@ -44,7 +44,7 @@ require_once __DIR__ . '/../includes/ajax.php';
 
    }
    else{
-       echo "one or more parameter is not passed to subscribe.php";
+       http_response_code(400); echo 'Missing subscription target.';
    }
 
 if ($conn->inTransaction()) $conn->commit();

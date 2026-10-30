@@ -1,38 +1,15 @@
 <?php
-  
-  class FormSanitizer{
-    public static function sanitizingFormString($inputString){
-      if (!is_string($inputString)) return '';
-        $inputString  = strip_tags($inputString);
-        $inputString =  str_replace(" " , "", $inputString);
-        $inputString = strtolower($inputString);
-        $inputString= ucfirst($inputString);
-  
-        return $inputString;
+class FormSanitizer {
+    public static function sanitizingFormString($value): string {
+        return is_string($value) ? trim($value) : '';
     }
-
-    public static function sanitizingFormUser($inputString){
-      if (!is_string($inputString)) return '';
-      $inputString  = strip_tags($inputString);
-      $inputString =  str_replace(" " , "", $inputString);
-
-      return $inputString;
-  }
-
-  public static function sanitizingFormEmail($inputString){
-      if (!is_string($inputString)) return '';
-    $inputString  = strip_tags($inputString);
-    $inputString =  str_replace(" " , "", $inputString);
-    
-    return $inputString;
+    public static function sanitizingFormUser($value): string {
+        return is_string($value) ? trim($value) : '';
+    }
+    public static function sanitizingFormEmail($value): string {
+        return is_string($value) ? trim($value) : '';
+    }
+    public static function sanitizingFormPassword($value): string {
+        return is_string($value) ? $value : '';
+    }
 }
-
-    public static function sanitizingFormPassword($inputString){
-      if (!is_string($inputString)) return '';
-      return $inputString;
-    }
-
-
-
-  } 
-?>

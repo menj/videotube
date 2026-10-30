@@ -28,8 +28,7 @@
      $wasSuccessful = $account->register($firstName, $lastName, $username, $email, $email2, $password, $password2);
       
      if($wasSuccessful){
-        session_regenerate_id(true);
-       $_SESSION["userLoggedIn"] = $username;
+        startAuthenticatedSession($conn, $username);
         header("Location: index.php");
        exit;
      }

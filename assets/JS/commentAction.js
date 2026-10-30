@@ -1,10 +1,9 @@
 function postComment(button, postedBy, videoId, replyTo, containerClass) {
     let textarea = $(button).siblings("textarea");
     let commentText = textarea.val();
-    //Emptying textarea once btn is clicked
-    textarea.val("");
 
-    if (commentText) {
+    if (commentText && commentText.trim()) {
+        $(button).prop("disabled", true);
         $.post("ajax/postComment.php", {
                 commentText: commentText,
                 postedBy: postedBy,
@@ -12,13 +11,14 @@ function postComment(button, postedBy, videoId, replyTo, containerClass) {
                 responseTo: replyTo
             })
             .done(function (comment) {
+                if (textarea.val() === commentText) textarea.val("");
                 if(!replyTo) {
                     $("." + containerClass).prepend(comment);
                 }
                 else {
                     $(button).parent().siblings("." + containerClass).append(comment);
                 }
-            });
+            }).always(function () { $(button).prop("disabled", false); });
     } else {
         alert("You can't post an empty comment");
     }

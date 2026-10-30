@@ -61,7 +61,7 @@
             }
             else {
                 $description = htmlspecialchars((string)$this->video->getVideoDescription(),ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-                $description = (strlen($description) > 350) ? substr($description, 0, 347)."..." : $description;
+
 
                 return "<span class='description'>$description</span>";
             }

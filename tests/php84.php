@@ -66,6 +66,16 @@ foreach (['FormString','FormUser','FormEmail','FormPassword'] as $name) {
     $method = 'sanitizing' . $name;
     check(is_string(FormSanitizer::$method('Example')), 'Form sanitizer ' . $name);
 }
+check(FormSanitizer::sanitizingFormString('  Mohd Elfie  ') === 'Mohd Elfie', 'Preserve spaces and casing in names');
+check(FormSanitizer::sanitizingFormEmail('  Mixed.Case@example.test ') === 'Mixed.Case@example.test', 'Preserve email local-part casing');
+check(FormSanitizer::sanitizingFormUser('bad name') === 'bad name', 'Do not silently rewrite invalid usernames');
+foreach (['bytes=0-9'=>[0,9], 'bytes=90-'=>[90,99], 'bytes=-10'=>[90,99], 'bytes=0-999'=>[0,99]] as $header=>$expected) {
+    check(MediaRange::parse($header,100)===$expected,'Byte range '.$header);
+}
+foreach (['bytes=100-','bytes=-0','bytes=9-2','bytes=0-1,4-5'] as $header) {
+    try { MediaRange::parse($header,100); check(false,'Invalid range accepted'); }
+    catch (RangeException $e) { check(true,'Invalid range rejected'); }
+}
 $guestVideo = new Video($db,1,$guest);
 $guestComment = new Comment($db,['id'=>1],$guest,1);
 foreach ([$guestVideo, $guestComment] as $subject) {

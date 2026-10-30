@@ -13,8 +13,13 @@ $conn = new PDO($dsn !== false ? $dsn : $local['dsn'], $user !== false ? $user :
     $password !== false ? $password : ($local['password'] ?? ''),
     [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES=>false]);
 if (PHP_SAPI !== 'cli' && !empty($_SESSION['userLoggedIn'])) {
-    $q=$conn->prepare('SELECT id FROM users WHERE username=?'); $q->execute([$_SESSION['userLoggedIn']]);
-    if (!$q->fetchColumn()) unset($_SESSION['userLoggedIn']);
+    $q=$conn->prepare('SELECT password FROM users WHERE username=?'); $q->execute([$_SESSION['userLoggedIn']]);
+    $stored=$q->fetchColumn();
+    if (!is_string($stored) || !is_string($_SESSION['authVersion'] ?? null)
+        || !hash_equals(hash('sha256',$stored),$_SESSION['authVersion'])) {
+        unset($_SESSION['userLoggedIn'],$_SESSION['authVersion']);
+        session_regenerate_id(true);
+    }
 }
 
 if (PHP_SAPI !== 'cli' && $_SERVER['REQUEST_METHOD']==='POST') {

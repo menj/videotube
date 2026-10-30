@@ -13,8 +13,7 @@
     $wasSuccessful = $account->login($username, $password);
       
     if($wasSuccessful){
-       session_regenerate_id(true);
-       $_SESSION["userLoggedIn"] = $username;
+       startAuthenticatedSession($conn, $username);
        header("Location: index.php");
        exit;
     }

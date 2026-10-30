@@ -10,7 +10,7 @@ final class Installer {
             foreach (['username','email','password'] as $field) if (!is_string($account[$field] ?? null)) throw new InvalidArgumentException('Invalid account details.');
             if (!preg_match('/^[A-Za-z0-9_]{5,25}$/D', $account['username'])
                 || strlen($account['email']) > 191 || !filter_var($account['email'], FILTER_VALIDATE_EMAIL)
-                || strlen($account['password']) < 12 || strlen($account['password']) > 72) {
+                || strlen($account['password']) < 12 || strlen($account['password']) > 72 || str_contains($account['password'], "\0")) {
                 throw new InvalidArgumentException('Use a 5–25 character username (letters, digits, underscore), a valid email, and a 12–72 byte password.');
             }
             foreach (explode(';', $schema) as $sql) {

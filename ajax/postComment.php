@@ -5,7 +5,7 @@ require_once __DIR__ . '/../includes/ajax.php';
    require_once("../includes/classes/Comment.php");
    require_once("../includes/classes/User.php");
 
-   if(isset($_POST["commentText"]) && isset($_POST["postedBy"]) && isset($_POST["videoId"])){
+   if(isset($_POST["commentText"]) && isset($_POST["videoId"])){
        $userLoggedInObj = new User($conn, ($_SESSION["userLoggedIn"] ?? ""));
        
        //inserting into database
@@ -36,7 +36,7 @@ require_once __DIR__ . '/../includes/ajax.php';
        echo $newComment->create();
     }
    else{
-       echo "one or more parameter is not passed to subscribe.php";
+       http_response_code(400); echo 'Missing comment text or video.';
    }
 
 if ($conn->inTransaction()) $conn->commit();

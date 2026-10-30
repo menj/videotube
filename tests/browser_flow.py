@@ -29,7 +29,7 @@ try:
  assert b'Installation complete' in owner.post('install.php',fields)
  assert (root/'includes/local.php').stat().st_mode & 0o077 == 0
  owner.request('install.php',expect=403)
- owner.page('signIn.php'); owner.post('signIn.php',dict(submitButton=1,username='owner',password=fields['password']))
+ owner.page('signIn.php'); owner.post('signIn.php',dict(submitButton=1,username='OWNER',password=fields['password']))
  owner.page('upload.php')
  subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','color=c=blue:s=160x120:d=1','-c:v','libx264','-y','/tmp/videotube-test.mp4'],check=True)
  def upload(content):
@@ -64,9 +64,12 @@ try:
  owner.post('ajax/getCommentReplies.php',dict(videoId=1,commentId=999),expect=404)
  owner.post('ajax/subscribe.php',dict(userTo='other',userFrom='impersonated'))
  owner.post('ajax/subscribe.php',dict(userTo='owner',userFrom='other'),expect=422)
+ stale=Client();stale.page('signIn.php');stale.post('signIn.php',dict(submitButton=1,username='owner',password=fields['password']));stale.page('index.php')
  owner.page('settings.php')
- assert b'Details updated successfully' in owner.post('settings.php',dict(saveDetailsButton=1,firstName='Site',lastName='Owner',email='owner@example.test'))
+ assert b'Details updated successfully' in owner.post('settings.php',dict(saveDetailsButton=1,firstName='Mohd Elfie',lastName='Site Owner',email='Mixed.Case@example.test'))
  assert b'Password updated successfully' in owner.post('settings.php',dict(savePasswordButton=1,oldPassword=fields['password'],newPassword='changed!Password123',newPassword2='changed!Password123'))
+ assert 'Mohd Elfie Site Owner' in owner.page('profile.php?username=owner')
+ stale.post('ajax/likeVideo.php',dict(videoId=1),expect=403)
  owner.page('logout.php');owner.post('logout.php',{})
  owner.page('index.php');owner.post('ajax/likeVideo.php',dict(videoId=1),expect=403)
  print('HTTP installation, CSRF, login/logout, upload, edit, privacy, ranges, comments and votes passed.')
