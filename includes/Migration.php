@@ -23,6 +23,7 @@ final class Migration {
             $plan=[];
             $schema=file_get_contents(__DIR__.'/../database/schema.sql');
             foreach (explode(';',$schema) as $sql) if (preg_match('/^\s*CREATE TABLE\s+`?([a-zA-Z0-9_]+)`?/i',$sql,$m) && !in_array($m[1],$tables,true)) $plan[]=$sql;
+            if (!in_array('categories',$tables,true)) foreach (explode(';',$schema) as $sql) if (preg_match('/^\s*INSERT INTO `categories`/i',$sql)) $plan[]=$sql;
             $columns=$db->query('SHOW COLUMNS FROM users')->fetchAll(PDO::FETCH_COLUMN);
             foreach (['role'=>"VARCHAR(16) NOT NULL DEFAULT 'user'",'suspended'=>'TINYINT NOT NULL DEFAULT 0','sessionVersion'=>'INT NOT NULL DEFAULT 0','emailVerifiedAt'=>'DATETIME NULL'] as $name=>$definition) if (!in_array($name,$columns,true)) $plan[]="ALTER TABLE users ADD `$name` $definition";
             $columns=$db->query('SHOW COLUMNS FROM videos')->fetchAll(PDO::FETCH_COLUMN);

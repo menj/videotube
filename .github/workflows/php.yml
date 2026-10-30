@@ -60,5 +60,7 @@ jobs:
           extensions: pdo_mysql
           coverage: none
       - run: php tests/install.php
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: php tests/migration.php
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg apache2 nginx
       - run: python3 tests/browser_flow.py
+      - run: python3 tests/web_rules.py

@@ -20,6 +20,7 @@ if (isset($_POST['videoId'])) {
 // Serialize account mutations across sessions; endpoint commits after completing its writes.
 if (basename($_SERVER['SCRIPT_FILENAME']) !== 'getCommentReplies.php') {
     $conn->beginTransaction();
-    $q=$conn->prepare('SELECT id FROM users WHERE username=? FOR UPDATE');
+    $q=$conn->prepare('SELECT id FROM users WHERE username=? AND suspended=0 AND emailVerifiedAt IS NOT NULL FOR UPDATE');
     $q->execute([requireLogin()]);
+    if (!$q->fetchColumn()) { $conn->rollBack();http_response_code(403);exit('Verified active account required.'); }
 }
