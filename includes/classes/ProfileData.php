@@ -44,7 +44,7 @@ class ProfileData {
     }
 
     public function getUsersVideos() {
-        $query = $this->conn->prepare("SELECT * FROM videos WHERE uploadedBy=:uploadedBy ORDER BY uploadDate DESC");
+        $query = $this->conn->prepare("SELECT * FROM videos WHERE privacy=1 AND uploadedBy=:uploadedBy ORDER BY uploadDate DESC");
         $query->bindParam(":uploadedBy", $username);
         $username = $this->getProfileUsername();
         $query->execute();

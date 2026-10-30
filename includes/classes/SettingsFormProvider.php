@@ -33,6 +33,7 @@ class SettingsFormProvider {
     }
 
     private function createFirstNameInput($value) {
+        $value = htmlspecialchars((string)$value,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
         if($value == null) $value = "";
         return "<div class='form-group'>
                     <input class='form-control' type='text' placeholder='First name' name='firstName' value='$value' required>
@@ -40,6 +41,7 @@ class SettingsFormProvider {
     }
 
     private function createLastNameInput($value) {
+        $value = htmlspecialchars((string)$value,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
         if($value == null) $value = "";
         return "<div class='form-group'>
                     <input class='form-control' type='text' placeholder='Last name' name='lastName' value='$value' required>
@@ -47,6 +49,7 @@ class SettingsFormProvider {
     }
 
     private function createEmailInput($value) {
+        $value = htmlspecialchars((string)$value,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
         if($value == null) $value = "";
         return "<div class='form-group'>
                     <input class='form-control' type='email' placeholder='Email' name='email' value='$value' required>

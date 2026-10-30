@@ -1,0 +1,5 @@
+# Include inside your server block; configure HTTPS and PHP-FPM for your host.
+location ~ ^/(includes|database|tests|bin|uploads)(/|$) { deny all; }
+location ~ /\. { deny all; }
+client_max_body_size 52m;
+# PHP-FPM must receive HTTPS=on when this server terminates TLS.

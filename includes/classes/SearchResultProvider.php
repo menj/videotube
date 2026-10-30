@@ -9,8 +9,10 @@ class SearchResultProvider {
     }
 
     public function getVideos($term, $orderBy) {
-        $query = $this->conn->prepare("SELECT * FROM videos WHERE title LIKE CONCAT('%', :term, '%')
-                                        OR uploadedBy LIKE CONCAT('%', :term, '%') ORDER BY $orderBy DESC");
+        $orderBy = $orderBy === 'uploadDate' ? 'uploadDate' : 'views';
+        $query = $this->conn->prepare("SELECT * FROM videos WHERE privacy=1 AND (title LIKE CONCAT('%', :term, '%')
+                                        OR uploadedBy LIKE CONCAT('%', :creator, '%')) ORDER BY $orderBy DESC LIMIT 100");
+        $query->bindValue(':creator',$term);
         $query->bindParam(":term", $term);
         $query->execute();
 

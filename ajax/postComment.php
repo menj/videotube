@@ -1,8 +1,9 @@
-<?php 
+<?php
+require_once __DIR__ . '/../includes/ajax.php'; 
    
-   include("../includes/config.php");
-   include("../includes/classes/Comment.php");
-   include("../includes/classes/User.php");
+   require_once("../includes/config.php");
+   require_once("../includes/classes/Comment.php");
+   require_once("../includes/classes/User.php");
 
    if(isset($_POST["commentText"]) && isset($_POST["postedBy"]) && isset($_POST["videoId"])){
        $userLoggedInObj = new User($conn, ($_SESSION["userLoggedIn"] ?? ""));
@@ -15,11 +16,19 @@
        $query->bindParam(":body", $commentText);
        $query->bindparam(":responseTo", $responseTo);
        
-       $postedBy = $_POST["postedBy"];
+       $postedBy = requireLogin();
        $videoId = $_POST["videoId"];
        $responseTo = isset($_POST['responseTo']) ? $_POST['responseTo'] : 0;
        
-       $commentText = $_POST["commentText"];
+       $commentText = inputText('commentText',$_POST);
+       if (trim($commentText)==='' || strlen($commentText)>10000) { http_response_code(422); exit; }
+       $responseTo = ($responseTo === '' || $responseTo === null) ? 0 : filter_var($responseTo,FILTER_VALIDATE_INT,['options'=>['min_range'=>0]]);
+       if ($responseTo === false) { http_response_code(422); exit; }
+       if ($responseTo > 0) {
+           $parent=$conn->prepare('SELECT id FROM comments WHERE id=? AND videoId=? AND responseTo=0');
+           $parent->execute([$responseTo,$videoId]);
+           if (!$parent->fetchColumn()) { http_response_code(422); exit; }
+       }
 
        $query->execute();
 

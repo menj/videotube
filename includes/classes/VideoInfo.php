@@ -18,7 +18,7 @@
      }
 
    private function getVideoPrimaryInfo(){
-       $title = $this->video->getVideoTitle();
+       $title = htmlspecialchars((string)$this->video->getVideoTitle(),ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
        $views = $this->video->getVideoViews();
        $videoInfoControls = new VideoInfoControls($this->video, $this->userLoggedInObj);
        $controls = $videoInfoControls->create();       
@@ -34,9 +34,9 @@
    }
 
    private function getVideoSecondaryInfo (){
-       $description = $this->video->getVideoDescription();
+       $description = htmlspecialchars((string)$this->video->getVideoDescription(),ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
        $uploadDate = $this->video->getVideoUploadDate();
-       $uploadedBy = $this->video->getVideoUploadedBy();
+       $uploadedBy = htmlspecialchars((string)$this->video->getVideoUploadedBy(),ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
        $profileButton = ButtonProvider::createProfileButton($this->conn, $uploadedBy);
     
        if($uploadedBy == $this->userLoggedInObj->getUsername()){

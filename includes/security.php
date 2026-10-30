@@ -1,0 +1,34 @@
+<?php
+function h($value): string { return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
+function inputText(string $key, array $source): string { return is_string($source[$key] ?? null) ? $source[$key] : ''; }
+function secureTransport(): bool { return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || getenv('VIDEOTUBE_HTTPS') === '1'; }
+function localRequest(): bool { return in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1','::1'],true); }
+function csrfToken(): string { return $_SESSION['csrf'] ??= bin2hex(random_bytes(32)); }
+function requireLogin(): string {
+    $user = $_SESSION['userLoggedIn'] ?? '';
+    if (!is_string($user) || $user === '') { http_response_code(403); exit('Sign in to continue.'); }
+    return $user;
+}
+function applicationSecurity(): void {
+    ini_set('display_errors','0');
+    set_exception_handler(function(Throwable $error) {
+        error_log((string)$error); http_response_code(500); echo 'The request could not be completed. Check the server log.';
+    });
+    if (PHP_SAPI === 'cli') return;
+    if (!secureTransport() && !localRequest()) { http_response_code(400); exit('HTTPS is required.'); }
+    header('X-Content-Type-Options: nosniff'); header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('X-Frame-Options: SAMEORIGIN');
+    if (secureTransport()) header('Strict-Transport-Security: max-age=31536000');
+    if (session_status() !== PHP_SESSION_ACTIVE) session_start(['use_strict_mode'=>true,'cookie_httponly'=>true,'cookie_secure'=>secureTransport(),'cookie_samesite'=>'Lax']);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf'] ?? '');
+        if (!is_string($token) || !hash_equals(csrfToken(),$token)) { http_response_code(403); exit('Invalid session token. Reload and try again.'); }
+    }
+    // Include the token in every server-rendered POST form, including legacy form providers.
+    ob_start(function($html) {
+        return preg_replace_callback('~<form\b[^>]*>~i', function($match) {
+            return preg_match('~method\s*=\s*["\']?post\b~i',$match[0])
+                ? $match[0] . '<input type="hidden" name="csrf" value="' . h(csrfToken()) . '">' : $match[0];
+        }, $html);
+    });
+}

@@ -1,29 +1,9 @@
-<?php 
-   
-   class VideoPlayer{
-
-     private $video;
-
-     public function __construct($video){
-         $this->video = $video;
-     }
-
-     public function create($autoPlay){
-         if($autoPlay){
-             $autoPlay = "autoPlay";
-         }
-         else{
-             $autoPlay = "";
-         }
-
-         $filePath = $this->video->getVideoFilePath();
-
-         return "<video class ='videoPlayer' controls $autoPlay>
-                    <source src = '$filePath' type = 'video/mp4'>
-                    Your browser does not support video tag.
-                 </video>";
-     }
-
-   }
- 
-?>
+<?php
+class VideoPlayer {
+    private $video;
+    public function __construct($video) { $this->video=$video; }
+    public function create($autoPlay) {
+        $id=(int)$this->video->getVideoId();
+        return '<video class="videoPlayer" controls' . ($autoPlay?' autoplay':'') . '><source src="stream.php?id=' . $id . '" type="video/mp4">Your browser does not support video playback.</video>';
+    }
+}

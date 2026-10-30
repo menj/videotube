@@ -7,14 +7,16 @@ CREATE TABLE `dislikes` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `username` varchar(50) NOT NULL,
   `commentId` int(11) NOT NULL DEFAULT 0,
-  `videoId` int(11) NOT NULL DEFAULT 0
+  `videoId` int(11) NOT NULL DEFAULT 0,
+ UNIQUE KEY vote_unique(username,videoId,commentId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `likes` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `username` varchar(50) NOT NULL,
   `commentId` int(11) NOT NULL DEFAULT 0,
-  `videoId` int(11) NOT NULL DEFAULT 0
+  `videoId` int(11) NOT NULL DEFAULT 0,
+ UNIQUE KEY vote_unique(username,videoId,commentId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `thumbnails` (
@@ -29,7 +31,7 @@ CREATE TABLE `users` (
   `firstName` varchar(25) NOT NULL,
   `lastName` varchar(25) NOT NULL,
   `username` varchar(25) NOT NULL,
-  `email` varchar(255) NOT NULL,
+  `email` varchar(191) NOT NULL,
   `password` varchar(255) NOT NULL,
   `singUpDate` datetime NOT NULL DEFAULT current_timestamp(),
   `profilePic` varchar(255) NOT NULL
@@ -63,7 +65,7 @@ CREATE TABLE subscribers (
 
 INSERT INTO `categories` (`id`, `name`) VALUES
 (16, 'Film & Animation'),
-(17, 'Autos & Vehicals'),
+(17, 'Autos & Vehicles'),
 (18, 'Music'),
 (19, 'Pets & Animals'),
 (20, 'Sports'),
@@ -77,3 +79,8 @@ INSERT INTO `categories` (`id`, `name`) VALUES
 (28, 'Education'),
 (29, 'Science & Technology'),
 (30, 'Nonprofits & Activism');
+
+CREATE TABLE request_limits (
+ id CHAR(64) CHARACTER SET ascii NOT NULL PRIMARY KEY,
+ hits INT NOT NULL DEFAULT 1, expiresAt DATETIME NOT NULL, INDEX(expiresAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

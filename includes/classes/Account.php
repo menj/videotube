@@ -13,7 +13,13 @@ class Account {
         $query->execute([$un]);
         $stored = $query->fetchColumn();
         if (is_string($stored) && (password_verify($pw,$stored)
-            || (preg_match('/^[a-f0-9]{128}$/D',$stored) && hash_equals($stored,hash('sha512',$pw))))) return true;
+            || (preg_match('/^[a-f0-9]{128}$/D',$stored) && hash_equals($stored,hash('sha512',$pw))))) {
+            if (password_needs_rehash($stored,PASSWORD_DEFAULT)) {
+                $q=$this->conn->prepare('UPDATE users SET password=? WHERE username=?');
+                $q->execute([password_hash($pw,PASSWORD_DEFAULT),$un]);
+            }
+            return true;
+        }
         $this->errorArray[] = Constants::$UserLoginFailed;
         return false;
     }
@@ -110,7 +116,7 @@ class Account {
     }
 
     private function validateUsername($un) {
-        if(strlen($un) > 25 || strlen($un) < 5) {
+        if(!preg_match('/^[A-Za-z0-9_]{5,25}$/D',$un)) {
             array_push($this->errorArray, Constants::$usernameCharacters);
             return;
         }
@@ -131,7 +137,7 @@ class Account {
             return;
         }
 
-        if(!filter_var($em, FILTER_VALIDATE_EMAIL)) {
+        if(strlen($em)>191 || !filter_var($em, FILTER_VALIDATE_EMAIL)) {
             array_push($this->errorArray, Constants::$emailInvalid);
             return;
         }
@@ -148,7 +154,7 @@ class Account {
 
     private function validateNewEmail($em, $un) {
 
-        if(!filter_var($em, FILTER_VALIDATE_EMAIL)) {
+        if(strlen($em)>191 || !filter_var($em, FILTER_VALIDATE_EMAIL)) {
             array_push($this->errorArray, Constants::$emailInvalid);
             return;
         }
@@ -170,16 +176,9 @@ class Account {
             return;
         }
 
-        if(preg_match("/[^A-Za-z0-9]/", $pw)) {
-            array_push($this->errorArray, Constants::$passwordNotAlphaNumeric);
-            return;
-        }
-
-        if(strlen($pw) > 30 || strlen($pw) < 5) {
-            array_push($this->errorArray, Constants::$passwordLength);
-        }
+        if(strlen($pw) > 72 || strlen($pw) < 12) $this->errorArray[] = 'Use a password of 12 to 72 bytes.';
     }
-    
+
     public function getError($error) {
         if(in_array($error, $this->errorArray)) {
             return "<span class='errorMessage'>$error</span>";

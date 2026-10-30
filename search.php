@@ -7,7 +7,7 @@
         exit();
     }
 
-    $term = $_GET["term"];
+    $term = inputText('term',$_GET);
 
     if(!isset($_GET["orderBy"]) || $_GET["orderBy"] == "views") {
         $orderBy = "views";

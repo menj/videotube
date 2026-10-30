@@ -17,7 +17,9 @@ class LikedVideosProvider {
       
         $query->execute();
         while($row = $query->fetch(PDO::FETCH_ASSOC)) {
-            $videos[] = new Video($this->conn, $row["videoId"], $this->userLoggedInObj);
+            try { $video = new Video($this->conn,$row['videoId'],$this->userLoggedInObj); }
+            catch (OutOfBoundsException $e) { continue; }
+            if ($video->canView($username)) $videos[] = $video;
         }
        
         return $videos;

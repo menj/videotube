@@ -1,10 +1,14 @@
-<?php 
+<?php
+require_once __DIR__ . '/../includes/ajax.php'; 
    
-   include("../includes/config.php");
+   require_once("../includes/config.php");
 
    if(isset($_POST["userTo"]) && isset($_POST["userFrom"])){
-       $userTo = $_POST["userTo"];
-       $userFrom = $_POST["userFrom"];
+       $userTo = inputText('userTo',$_POST);
+       $userFrom = requireLogin();
+       if ($userTo === $userFrom) { http_response_code(422); exit; }
+       $target=$conn->prepare('SELECT id FROM users WHERE username=?'); $target->execute([$userTo]);
+       if (!$target->fetchColumn()) { http_response_code(404); exit; }
 
        /* 1) check wheather user is already subscribed
           2) If not subscribed insert into database

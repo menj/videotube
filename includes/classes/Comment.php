@@ -24,8 +24,8 @@
        public function create(){
            $id = $this->sqlData["id"];
            $videoId = $this->getVideoId();
-           $body = $this->sqlData["body"];
-           $postedBy = $this->sqlData["postedBy"];
+           $body = htmlspecialchars($this->sqlData['body'],ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+           $postedBy = htmlspecialchars($this->sqlData['postedBy'],ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
            $profileButton = ButtonProvider::createProfileButton($this->conn, $postedBy);
            $timespan = $this->time_elapsed_string($this->sqlData["datePosted"]);
            
@@ -128,7 +128,7 @@
      }
 
         public function wasDisLiked() {
-            $id = $this->getVideoId();
+            $id = $this->getId();
             $username = $this->userLoggedInObj->getUsername();
             
             $query = $this->conn->prepare("SELECT * FROM dislikes WHERE username=:username AND commentId=:commentId");
@@ -205,7 +205,7 @@
         if($this->wasDisLiked()){
             $query = $this->conn->prepare("DELETE FROM dislikes WHERE username = :username AND commentId = :commentId");
             $query->bindParam(":username", $username);
-            $query->bindParam(":videoId", $commentId);
+            $query->bindParam(":commentId", $commentId);
 
             $query->execute();
             

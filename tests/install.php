@@ -4,8 +4,17 @@ require __DIR__ . '/../includes/classes/Account.php';
 require __DIR__ . '/../includes/classes/Constants.php';
 $db = new PDO('mysql:host=127.0.0.1;dbname=videotube_test;charset=utf8mb4','root','test',[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
 $account=['username'=>'owner','email'=>'owner@example.test','password'=>'a!StrongPassword123'];
+$schema = file_get_contents(__DIR__.'/../database/schema.sql');
+foreach (['ddl','publish'] as $failure) {
+    try {
+        Installer::install($db, $account, $schema . ($failure === 'ddl' ? ';INVALID SQL' : ''), $failure === 'publish' ? function() { throw new RuntimeException('Simulated configuration failure'); } : null);
+        throw new LogicException('Expected installation failure');
+    } catch (PDOException | RuntimeException $e) {
+        if ($db->query('SHOW TABLES')->fetchColumn() !== false) throw new LogicException('Failed install left tables behind');
+    }
+}
 Installer::install($db,$account,file_get_contents(__DIR__.'/../database/schema.sql'));
-foreach (['users','videos','thumbnails','categories','likes','dislikes','comments','subscribers'] as $table) $db->query('SELECT * FROM '.$table);
+foreach (['users','videos','thumbnails','categories','likes','dislikes','comments','subscribers','request_limits'] as $table) $db->query('SELECT * FROM '.$table);
 if ((int)$db->query('SELECT COUNT(*) FROM users')->fetchColumn()!==1) throw new RuntimeException('Expected one first account');
 if (!(new Account($db))->login('owner',$account['password'])) throw new RuntimeException('Installer password cannot sign in');
 if ((new Account($db))->login('owner','wrong')) throw new RuntimeException('Wrong password accepted');

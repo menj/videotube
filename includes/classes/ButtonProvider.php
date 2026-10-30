@@ -2,7 +2,12 @@
   class ButtonProvider{
 
     public static function createButton($text, $imageSrc, $action, $class){
-        $image = ($imageSrc == null) ? "" : "<img src=$imageSrc>";
+      $text = htmlspecialchars((string)$text,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+      $imageSrc = htmlspecialchars((string)$imageSrc,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+      $action = htmlspecialchars((string)$action,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+      $class = htmlspecialchars((string)$class,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+
+        $image = ($imageSrc == null) ? "" : "<img src='$imageSrc'>";
         
         // Change action if needed.
         return "
@@ -17,7 +22,12 @@
 
     
     public static function createHyperlinkButton($text, $imageSrc, $href, $class){
-      $image = ($imageSrc == null) ? "" : "<img src=$imageSrc>";
+      $text = htmlspecialchars((string)$text,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+      $imageSrc = htmlspecialchars((string)$imageSrc,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+      $href = htmlspecialchars((string)$href,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+      $class = htmlspecialchars((string)$class,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+
+      $image = ($imageSrc == null) ? "" : "<img src='$imageSrc'>";
       
       // Change action if needed.
       return "
@@ -34,8 +44,8 @@
 
     public static function createProfileButton($conn, $uploadedBy){
       $userObj = new User($conn, $uploadedBy);
-      $profilePic = $userObj->getUserProfilePic();
-      $link = "profile.php?username=$uploadedBy";
+      $profilePic = htmlspecialchars($userObj->getUserProfilePic(),ENT_QUOTES,'UTF-8');
+      $link = 'profile.php?username=' . rawurlencode($uploadedBy);
 
       return "
               <a href = '$link'>

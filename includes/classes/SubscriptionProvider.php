@@ -34,7 +34,8 @@ class SubscriptionsProvider {
                 $i++;
             }
 
-            $videoSql = "SELECT * FROM videos $condition ORDER BY uploadDate DESC";
+            $condition = preg_replace('/^WHERE /','',$condition);
+            $videoSql = "SELECT * FROM videos WHERE ($condition) AND privacy=1 ORDER BY uploadDate DESC LIMIT 100";
             $videoQuery = $this->conn->prepare($videoSql);
 
             $i = 1;
@@ -42,7 +43,7 @@ class SubscriptionsProvider {
             foreach($subscriptions as $sub) {
                 $subUsername = $sub->getUsername();
                 
-                $videoQuery->bindParam($i, $subUsername);
+                $videoQuery->bindValue($i, $subUsername);
                 $i++;
             }
 

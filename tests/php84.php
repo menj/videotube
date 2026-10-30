@@ -61,7 +61,7 @@ $videos = $data->getUsersVideos();
 check(count($videos) === 1 && $videos[0] instanceof Video, 'Profile video objects');
 check($videos[0]->wasLiked() === false, 'Profile passes User object');
 $db->exec("INSERT INTO thumbnails VALUES(1,1,'thumb.jpg',1)");
-check(str_contains((new SelectThumbnail($db,$video))->create(),'thumb.jpg'), 'Actual thumbnail column names');
+check(str_contains((new SelectThumbnail($db,$video))->create(),'thumbnail.php?id=1&thumbnail=1'), 'Actual thumbnail column names');
 foreach (['FormString','FormUser','FormEmail','FormPassword'] as $name) {
     $method = 'sanitizing' . $name;
     check(is_string(FormSanitizer::$method('Example')), 'Form sanitizer ' . $name);

@@ -1,0 +1,2 @@
+# Private videos must only be served through stream.php.
+Require all denied

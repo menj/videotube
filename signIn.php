@@ -13,8 +13,10 @@
     $wasSuccessful = $account->login($username, $password);
       
     if($wasSuccessful){
+       session_regenerate_id(true);
        $_SESSION["userLoggedIn"] = $username;
        header("Location: index.php");
+       exit;
     }
     else{
        echo "Login failed";
@@ -25,7 +27,7 @@
 
   function getInputValues($name){
     if(isset($_POST[$name])){
-        echo $_POST[$name];
+        echo h(inputText($name,$_POST));
     }
   }
 ?>

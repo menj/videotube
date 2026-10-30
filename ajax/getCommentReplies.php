@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/ajax.php';
 require_once("../includes/config.php"); 
 require_once("../includes/classes/Comment.php"); 
 require_once("../includes/classes/User.php"); 
