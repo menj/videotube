@@ -47,6 +47,7 @@
 
 
 
+<link rel="stylesheet" href="assets/CSS/fonts.css">
 </head>
 
 <body>

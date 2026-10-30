@@ -60,7 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Install VideoTube</title><style>body{font:17px system-ui;max-width:640px;margin:40px auto;padding:20px;background:#f5f6fa}label{display:block;margin:16px 0}input{display:block;box-sizing:border-box;width:100%;padding:10px}button{padding:12px 24px}p{line-height:1.5}</style>
+<title>Install VideoTube</title><style>body{font-size:19px;max-width:640px;margin:40px auto;padding:20px;background:#f5f6fa}label{display:block;margin:16px 0}input{display:block;box-sizing:border-box;width:100%;padding:10px}button{padding:12px 24px}p{line-height:1.5}</style>
+<link rel="stylesheet" href="assets/CSS/fonts.css">
 <h1>Install VideoTube</h1>
 <?php if ($done): ?><p>Installation complete. Remove the installation token from your hosting environment.</p><a href="signIn.php">Sign in</a>
 <?php else: ?>
