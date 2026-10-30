@@ -58,7 +58,7 @@
   <link rel="stylesheet" href="assets/CSS/fonts.css">
 </head>
 
-   <body> 
+   <body><p><a href="account.php">Forgot password?</a></p> 
          <div class="signInContainer">
              <div class="column">
                 <div class="header">

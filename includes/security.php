@@ -10,18 +10,20 @@ function requireLogin(): string {
     return $user;
 }
 function startAuthenticatedSession(PDO $db, string $username): void {
-    $q=$db->prepare('SELECT username,password FROM users WHERE username=?');
+    $q=$db->prepare('SELECT username,password,sessionVersion FROM users WHERE username=? AND suspended=0');
     $q->execute([$username]); $account=$q->fetch(PDO::FETCH_ASSOC);
     if (!$account) throw new RuntimeException('Account no longer exists.');
     session_regenerate_id(true);
     $_SESSION['userLoggedIn']=$account['username'];
-    $_SESSION['authVersion']=hash('sha256',$account['password']);
+    $_SESSION['authVersion']=hash('sha256',$account['password'].':'.$account['sessionVersion']);
     $_SESSION['csrf']=bin2hex(random_bytes(32));
 }
 function applicationSecurity(): void {
     ini_set('display_errors','0');
     set_exception_handler(function(Throwable $error) {
-        error_log((string)$error); http_response_code(500); echo 'The request could not be completed. Check the server log.';
+        error_log((string)$error);
+        if (PHP_SAPI==='cli') exit(1);
+        http_response_code(500); echo 'The request could not be completed. Check the server log.';
     });
     if (PHP_SAPI === 'cli') return;
     if (!secureTransport() && !localRequest()) { http_response_code(400); exit('HTTPS is required.'); }
@@ -40,4 +42,17 @@ function applicationSecurity(): void {
                 ? $match[0] . '<input type="hidden" name="csrf" value="' . h(csrfToken()) . '">' : $match[0];
         }, $html);
     });
+}
+
+function requireVerified(PDO $db): string {
+    $username=requireLogin();
+    $q=$db->prepare('SELECT emailVerifiedAt FROM users WHERE username=? AND suspended=0'); $q->execute([$username]);
+    if (!$q->fetchColumn()) { http_response_code(403); exit('Verify your email at account.php before posting or uploading.'); }
+    return $username;
+}
+function requireAdmin(PDO $db): string {
+    $username=requireLogin();
+    $q=$db->prepare("SELECT id FROM users WHERE username=? AND role='admin' AND suspended=0"); $q->execute([$username]);
+    if (!$q->fetchColumn()) { http_response_code(403); exit('Administrator access required.'); }
+    return $username;
 }

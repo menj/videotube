@@ -9,7 +9,7 @@ class Account {
     }
 
     public function login($un, $pw) {
-        $query = $this->conn->prepare('SELECT password FROM users WHERE username=?');
+        $query = $this->conn->prepare('SELECT password FROM users WHERE username=? AND suspended=0');
         $query->execute([$un]);
         $stored = $query->fetchColumn();
         if (is_string($stored) && (password_verify($pw,$stored)
@@ -45,10 +45,11 @@ class Account {
         $this->validateNewEmail($em, $un);
 
         if(empty($this->errorArray)) {
-            $query = $this->conn->prepare("UPDATE users SET firstName=:fn, lastName=:ln, email=:em WHERE username=:un");
+            $query = $this->conn->prepare("UPDATE users SET firstName=:fn, lastName=:ln, emailVerifiedAt=IF(BINARY email=BINARY :checkEmail,emailVerifiedAt,NULL), email=:em WHERE username=:un");
             $query->bindParam(":fn", $fn);
             $query->bindParam(":ln", $ln);
             $query->bindParam(":em", $em);
+            $query->bindParam(":checkEmail", $em);
             $query->bindParam(":un", $un);
 
             return $query->execute();
@@ -76,7 +77,7 @@ class Account {
     }
 
     private function validateOldPassword($oldPw, $un) {
-        $query = $this->conn->prepare('SELECT password FROM users WHERE username=?');
+        $query = $this->conn->prepare('SELECT password FROM users WHERE username=? AND suspended=0');
         $query->execute([$un]);
         $stored = $query->fetchColumn();
         if (!is_string($stored) || !(password_verify($oldPw,$stored)

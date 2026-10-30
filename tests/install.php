@@ -23,4 +23,10 @@ $db->exec("INSERT INTO likes(username,videoId) VALUES('owner',1)");
 $db->exec("INSERT INTO comments(postedBy,videoId,body) VALUES('owner',1,'Hello')");
 try { Installer::install($db,$account,file_get_contents(__DIR__.'/../database/schema.sql')); throw new LogicException('Reinstallation accepted'); }
 catch (RuntimeException $e) { if (!str_contains($e->getMessage(),'empty database')) throw $e; }
+require __DIR__.'/../includes/Migration.php';
+$before=$db->query('SELECT COUNT(*) FROM users')->fetchColumn();
+Migration::apply($db,'owner',true);
+Migration::apply($db,'owner');
+Migration::apply($db,'owner');
+if ($db->query('SELECT COUNT(*) FROM users')->fetchColumn()!==$before) throw new RuntimeException('Migration lost users');
 echo "Installation, login, schema defaults, and overwrite protection passed.\n";

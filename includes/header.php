@@ -53,6 +53,10 @@
 
 <body>
     <div id="pageContainer">
+    <?php if (User::isLoggedIn()): ?>
+    <nav aria-label="Account tools"><a href="jobs.php">Upload status</a> · <a href="account.php">Verify email / account help</a>
+    <?php $roleQuery=$conn->prepare("SELECT role FROM users WHERE username=?");$roleQuery->execute([$usernameLoggedIn]);if ($roleQuery->fetchColumn()==='admin'): ?> · <a href="admin.php">Administration</a><?php endif; ?></nav>
+    <?php endif; ?>
         <!-- main header -->
         <div id="mastHeadContainer">
             <!-- menu bar btn -->

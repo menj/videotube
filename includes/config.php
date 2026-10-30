@@ -13,10 +13,10 @@ $conn = new PDO($dsn !== false ? $dsn : $local['dsn'], $user !== false ? $user :
     $password !== false ? $password : ($local['password'] ?? ''),
     [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES=>false]);
 if (PHP_SAPI !== 'cli' && !empty($_SESSION['userLoggedIn'])) {
-    $q=$conn->prepare('SELECT password FROM users WHERE username=?'); $q->execute([$_SESSION['userLoggedIn']]);
-    $stored=$q->fetchColumn();
-    if (!is_string($stored) || !is_string($_SESSION['authVersion'] ?? null)
-        || !hash_equals(hash('sha256',$stored),$_SESSION['authVersion'])) {
+    $q=$conn->prepare('SELECT password,suspended,sessionVersion FROM users WHERE username=?'); $q->execute([$_SESSION['userLoggedIn']]);
+    $accountState=$q->fetch(PDO::FETCH_ASSOC); $stored=$accountState['password'] ?? null;
+    if (!empty($accountState['suspended']) || !is_string($stored) || !is_string($_SESSION['authVersion'] ?? null)
+        || !hash_equals(hash('sha256',$stored.':'.$accountState['sessionVersion']),$_SESSION['authVersion'])) {
         unset($_SESSION['userLoggedIn'],$_SESSION['authVersion']);
         session_regenerate_id(true);
     }
@@ -25,5 +25,5 @@ if (PHP_SAPI !== 'cli' && !empty($_SESSION['userLoggedIn'])) {
 if (PHP_SAPI !== 'cli' && $_SERVER['REQUEST_METHOD']==='POST') {
     require_once __DIR__ . '/rate_limit.php';
     $scope=basename($_SERVER['SCRIPT_FILENAME']);
-    rateLimit($conn,$scope,in_array($scope,['signIn.php','signUp.php','processing.php'],true)?10:120);
+    rateLimit($conn,$scope,in_array($scope,['signIn.php','signUp.php','processing.php','account.php'],true)?10:120);
 }

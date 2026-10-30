@@ -5,12 +5,13 @@ final class VideoProcessor {
     private PDO $conn;
     private const SIZE_LIMIT = 50000000;
     public function __construct(PDO $conn) { $this->conn = $conn; }
-    public function upload($data): bool {
+    public function upload($data, bool $queued=false): bool {
+        if ($queued && (PHP_SAPI!=='cli' || !$data->jobId)) throw new RuntimeException('Invalid worker invocation.');
         $files = [];
         try {
             $upload = $data->videoDataArray;
             if (!is_array($upload) || ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
-                || !is_string($upload['tmp_name'] ?? null) || !is_uploaded_file($upload['tmp_name'])) {
+                || !is_string($upload['tmp_name'] ?? null) || !($queued ? is_file($upload['tmp_name']) : is_uploaded_file($upload['tmp_name']))) {
                 throw new InvalidArgumentException('Invalid upload.');
             }
             $size = filesize($upload['tmp_name']);
@@ -27,12 +28,12 @@ final class VideoProcessor {
             $query->execute([$data->categories]);
             if (!$query->fetchColumn()) throw new InvalidArgumentException('Invalid topic.');
             $root = dirname(__DIR__, 2);
-            $relative = 'uploads/videos/' . bin2hex(random_bytes(16));
+            $relative = 'uploads/videos/' . ($queued ? 'job-'.$data->jobId : bin2hex(random_bytes(16)));
             if (!is_dir($root . '/uploads/videos/thumbnails')
                 && !mkdir($root . '/uploads/videos/thumbnails', 0750, true)
                 && !is_dir($root . '/uploads/videos/thumbnails')) throw new RuntimeException('Cannot create upload directory.');
             $source = $root . '/' . $relative . '.source'; $files[] = $source;
-            if (!move_uploaded_file($upload['tmp_name'], $source)) throw new RuntimeException('Cannot store upload.');
+            if (!($queued ? copy($upload['tmp_name'], $source) : move_uploaded_file($upload['tmp_name'], $source))) throw new RuntimeException('Cannot store upload.');
             $ffprobe = mediaBinary('ffprobe');
             $ffmpeg = mediaBinary('ffmpeg');
             // Restrict demuxer protocols so malicious playlists cannot fetch network resources.
@@ -48,7 +49,7 @@ final class VideoProcessor {
                 '-vf', 'scale=w=1280:h=720:force_original_aspect_ratio=decrease:force_divisible_by=2', '-fs', '100000000', '-c:a', 'aac', '-movflags', '+faststart', '-y', $output]);
             $converted = json_decode(MediaCommand::run([$ffprobe, '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', $output], 20), true, 512, JSON_THROW_ON_ERROR);
             if (abs((float)($converted['format']['duration'] ?? 0) - $duration) > 2 || filesize($output) >= 100000000) throw new RuntimeException('Converted video exceeded output limits.');
-            $thumbRelative = 'uploads/videos/thumbnails/' . bin2hex(random_bytes(16)) . '.jpg';
+            $thumbRelative = 'uploads/videos/thumbnails/' . ($queued ? 'job-'.$data->jobId : bin2hex(random_bytes(16))) . '.jpg';
             $thumb = $root . '/' . $thumbRelative; $files[] = $thumb;
             MediaCommand::run([$ffmpeg, '-nostdin', '-v', 'error', '-ss', (string)($duration / 2), '-i', $output,
                 '-frames:v', '1', '-vf', 'scale=320:-2', '-threads', '1', '-y', $thumb], 20);
@@ -57,8 +58,10 @@ final class VideoProcessor {
             $formatted = $seconds >= 3600 ? sprintf('%d:%02d:%02d', intdiv($seconds,3600), intdiv($seconds%3600,60), $seconds%60)
                 : sprintf('%02d:%02d', intdiv($seconds,60), $seconds%60);
             $this->conn->beginTransaction();
-            $query = $this->conn->prepare('INSERT INTO videos (title,uploadedBy,description,category,privacy,filePath,views,duration) VALUES (?,?,?,?,?,?,0,?)');
-            $query->execute([$data->title, $data->uploadedBy, $data->description, $data->categories, $data->privacy, $relative . '.mp4', $formatted]);
+            $active=$this->conn->prepare('SELECT id FROM users WHERE username=? AND suspended=0 AND emailVerifiedAt IS NOT NULL FOR UPDATE');$active->execute([$data->uploadedBy]);
+            if (!$active->fetchColumn()) throw new RuntimeException('Account is no longer allowed to publish.');
+            $query = $this->conn->prepare('INSERT INTO videos (title,uploadedBy,description,category,privacy,filePath,views,duration,uploadJobId) VALUES (?,?,?,?,?,?,0,?,?)');
+            $query->execute([$data->title, $data->uploadedBy, $data->description, $data->categories, $data->privacy, $relative . '.mp4', $formatted, $data->jobId]);
             $id = $this->conn->lastInsertId();
             $query = $this->conn->prepare('INSERT INTO thumbnails(videoId,filePath,selected) VALUES (?,?,1)');
             $query->execute([$id, $thumbRelative]);

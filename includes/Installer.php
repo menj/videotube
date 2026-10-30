@@ -18,7 +18,7 @@ final class Installer {
                 $db->exec($sql);
                 if (preg_match('/^\s*CREATE TABLE\s+`?([a-zA-Z0-9_]+)`?/i', $sql, $m)) $created[] = $m[1];
             }
-            $q = $db->prepare('INSERT INTO users(firstName,lastName,username,email,password,profilePic) VALUES (?,?,?,?,?,?)');
+            $q = $db->prepare('INSERT INTO users(firstName,lastName,username,email,password,profilePic,role,emailVerifiedAt) VALUES (?,?,?,?,?,?,'admin',UTC_TIMESTAMP())');
             $q->execute(['Site','Owner',$account['username'],$account['email'],password_hash($account['password'], PASSWORD_DEFAULT),'assets/images/profilePictures/default.png']);
             if ($publish !== null) $publish();
         } catch (Throwable $error) {

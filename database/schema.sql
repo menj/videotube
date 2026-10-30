@@ -34,6 +34,10 @@ CREATE TABLE `users` (
   `email` varchar(191) NOT NULL,
   `password` varchar(255) NOT NULL,
   `singUpDate` datetime NOT NULL DEFAULT current_timestamp(),
+  role VARCHAR(16) NOT NULL DEFAULT 'user',
+  sessionVersion INT NOT NULL DEFAULT 0,
+  suspended TINYINT NOT NULL DEFAULT 0,
+  emailVerifiedAt DATETIME NULL,
   `profilePic` varchar(255) NOT NULL
 ,
  UNIQUE KEY username_unique (username),
@@ -49,7 +53,8 @@ CREATE TABLE `videos` (
   `filePath` varchar(300) NOT NULL,
   `uploadDate` datetime NOT NULL DEFAULT current_timestamp(),
   `views` int(11) NOT NULL DEFAULT 0,
-  `duration` varchar(10) NOT NULL DEFAULT '00:00'
+  `duration` varchar(10) NOT NULL DEFAULT '00:00',
+  uploadJobId BIGINT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE comments (
@@ -84,3 +89,25 @@ CREATE TABLE request_limits (
  id CHAR(64) CHARACTER SET ascii NOT NULL PRIMARY KEY,
  hits INT NOT NULL DEFAULT 1, expiresAt DATETIME NOT NULL, INDEX(expiresAt)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE account_tokens (
+ tokenHash CHAR(64) CHARACTER SET ascii PRIMARY KEY, userId INT NOT NULL,
+ purpose VARCHAR(16) NOT NULL, email VARCHAR(191) NOT NULL, passwordVersion CHAR(64) NOT NULL,
+ expiresAt DATETIME NOT NULL, INDEX(userId,purpose), INDEX(expiresAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE upload_jobs (
+ id BIGINT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(25) NOT NULL,
+ payload JSON NOT NULL, sourcePath VARCHAR(255) NOT NULL,
+ status VARCHAR(16) NOT NULL DEFAULT 'pending', error VARCHAR(255) NULL,
+ createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, finishedAt DATETIME NULL,
+ INDEX(status,id), INDEX(username,id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE moderation_log (
+ id BIGINT AUTO_INCREMENT PRIMARY KEY, actor VARCHAR(25) NOT NULL,
+ action VARCHAR(32) NOT NULL, target VARCHAR(255) NOT NULL,
+ createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE schema_migrations (
+ version INT PRIMARY KEY, appliedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT INTO schema_migrations(version) VALUES(1);

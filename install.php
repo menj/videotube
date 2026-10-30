@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php if ($done): ?><p>Installation complete. Remove the installation token from your hosting environment.</p><a href="signIn.php">Sign in</a>
 <?php else: ?>
 <p>PHP 8.4+ and PDO MySQL are available. Create an empty database in your hosting control panel, then enter its details below.</p>
-<p>This creates your first account. VideoTube currently has no separate administrator dashboard.</p>
+<p>This creates your administrator account.</p>
 <?php if ($error): ?><p role="alert"><?= e($error) ?></p><?php endif; ?>
 <form method="post">
 <?php foreach (['token'=>'Installation token','host'=>'Database host','database'=>'Database name','dbuser'=>'Database username','dbpass'=>'Database password','username'=>'Your username','email'=>'Your email','password'=>'Your password (12–72 bytes)','ffmpeg'=>'Absolute path to FFmpeg','ffprobe'=>'Absolute path to FFprobe'] as $field=>$label): ?>

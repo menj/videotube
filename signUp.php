@@ -29,7 +29,7 @@
       
      if($wasSuccessful){
         startAuthenticatedSession($conn, $username);
-        header("Location: index.php");
+        header("Location: account.php");
        exit;
      }
      else{
