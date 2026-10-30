@@ -4,6 +4,7 @@ require_once __DIR__ . '/classes/User.php';
 require_once __DIR__ . '/classes/Video.php';
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit; }
 if (basename($_SERVER['SCRIPT_FILENAME']) !== 'getCommentReplies.php') requireLogin();
+if (str_contains(basename($_SERVER['SCRIPT_FILENAME']), 'Comment') && basename($_SERVER['SCRIPT_FILENAME']) !== 'postComment.php' && !isset($_POST['commentId'])) { http_response_code(400); exit; }
 if (isset($_POST['videoId'])) {
     $id = filter_var($_POST['videoId'],FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
     try { $v = new Video($conn,$id ?: 0,null); }

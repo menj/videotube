@@ -51,7 +51,7 @@
         $cancelButtonAction = "toggleReply(this)";
         $cancelButton = ButtonProvider::createButton("Cancel", null, $cancelButtonAction, "cancelComment");
 
-        $postButtonAction = "postComment(this, \"$postedBy\", $videoId, $commentId, \"repliesSection\")";
+        $postButtonAction = 'postComment(this,' . json_encode($postedBy) . ',' . (int)$videoId . ',' . (int)$commentId . ',"repliesSection")';
         $postButton = ButtonProvider::createButton("Reply", null, $postButtonAction, "postComment");
 
         return "<div class='commentForm hidden'>

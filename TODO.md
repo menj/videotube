@@ -1,11 +1,14 @@
-# Installation work
+# Delivery checklist
 
-- [x] Protected browser setup for empty databases
-- [x] Complete clean schema (comments/subscribers, defaults, unique accounts)
-- [x] Save connection settings and lock subsequent setup
-- [x] Check runtime, writable media directories and executable paths
-- [x] Support installer password hashes at login and password change
-- [x] Correct upload category/privacy mapping and quote media arguments
-- [ ] Complete the broader upload conversion/rollback and security hardening (separate from fresh installation)
+- [x] PHP 8.4 minimum; PHP 8.4/8.5 regression checks
+- [x] Empty-database installer, complete schema, first account and installation locks
+- [x] Atomic private configuration publication and failed-install table cleanup
+- [x] HTTPS, secure sessions, CSRF, authenticated writes and request limits
+- [x] Public-list filtering and authorized private media streaming
+- [x] Validated uploads, bounded subprocesses, transcoding, thumbnails and rollback
+- [x] Owner-only editing of video details and visibility
+- [x] Escaped user content and corrected comment/vote queries
+- [x] Deployment restrictions and operational documentation
+- [x] Supplied fonts served as WOFF2
 
-GitHub Issues is disabled; this checklist tracks the installation work.
+GitHub Issues is disabled. Future product work: administrator moderation, account recovery/email verification, queued transcoding and a reviewed legacy-data migration. This checklist does not claim those features exist.

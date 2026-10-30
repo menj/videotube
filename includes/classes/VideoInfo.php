@@ -52,7 +52,7 @@
                    $profileButton
                    <div class='uploadInfo'>
                     <span class = 'owner'>
-                       <a href='profile.php?username = $uploadedBy'>
+                       <a href='profile.php?username=$uploadedBy'>
                            $uploadedBy
                        </a>
                     </span>
