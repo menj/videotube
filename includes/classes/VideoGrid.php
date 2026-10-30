@@ -32,7 +32,7 @@
     }
 
       public function generateItems() {
-        $query = $this->conn->prepare("SELECT * FROM videos ORDER BY RAND() LIMIT 15");
+        $query = $this->conn->prepare("SELECT * FROM videos WHERE privacy=1 ORDER BY RAND() LIMIT 15");
         $query->execute();
 
         $elementHtml = "";

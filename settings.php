@@ -17,9 +17,9 @@ $formProvider = new SettingsFormProvider();
 if(isset($_POST["saveDetailsButton"])) {
     $account = new Account($conn);
 
-    $firstName = FormSanitizer::sanitizingFormString($_POST["firstName"]);
-    $lastName = FormSanitizer::sanitizingFormString($_POST["lastName"]);
-    $email = FormSanitizer::sanitizingFormString($_POST["email"]);
+    $firstName = FormSanitizer::sanitizingFormString(inputText('firstName',$_POST));
+    $lastName = FormSanitizer::sanitizingFormString(inputText('lastName',$_POST));
+    $email = FormSanitizer::sanitizingFormEmail(inputText('email',$_POST));
 
     if($account->updateDetails($firstName, $lastName, $email, $userLoggedInObj->getusername())) {
         $detailsMessage = "<div class='alert alert-success'>
@@ -40,11 +40,12 @@ if(isset($_POST["saveDetailsButton"])) {
 if(isset($_POST["savePasswordButton"])) {
     $account = new Account($conn);
 
-    $oldPassword = FormSanitizer::sanitizingFormPassword($_POST["oldPassword"]);
-    $newPassword = FormSanitizer::sanitizingFormPassword($_POST["newPassword"]);
-    $newPassword2 = FormSanitizer::sanitizingFormPassword($_POST["newPassword2"]);
+    $oldPassword = FormSanitizer::sanitizingFormPassword(inputText('oldPassword',$_POST));
+    $newPassword = FormSanitizer::sanitizingFormPassword(inputText('newPassword',$_POST));
+    $newPassword2 = FormSanitizer::sanitizingFormPassword(inputText('newPassword2',$_POST));
 
     if($account->updatePassword($oldPassword, $newPassword, $newPassword2, $userLoggedInObj->getusername())) {
+        startAuthenticatedSession($conn, $userLoggedInObj->getUsername());
         $passwordMessage = "<div class='alert alert-success'>
                                 <strong>SUCCESS!</strong> Password updated successfully!
                             </div>";
@@ -68,9 +69,9 @@ if(isset($_POST["savePasswordButton"])) {
         </div>
         <?php
             echo $formProvider->createUserDetailsForm(
-                isset($_POST["firstName"]) ? $_POST["firstName"] : $userLoggedInObj->getUserFirstName(),
-                isset($_POST["lastName"]) ? $_POST["lastName"] : $userLoggedInObj->getUserLastName(),
-                isset($_POST["email"]) ? $_POST["email"] : $userLoggedInObj->getUserEmail()
+                isset($_POST["firstName"]) ? inputText('firstName',$_POST) : $userLoggedInObj->getUserFirstName(),
+                isset($_POST["lastName"]) ? inputText('lastName',$_POST) : $userLoggedInObj->getUserLastName(),
+                isset($_POST["email"]) ? inputText('email',$_POST) : $userLoggedInObj->getUserEmail()
             );
         ?>
     </div>

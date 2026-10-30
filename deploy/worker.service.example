@@ -1,0 +1,16 @@
+# Install with the matching timer; change User and WorkingDirectory for your host.
+[Unit]
+Description=VideoTube upload queue
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+WorkingDirectory=/var/www/videotube
+ExecStart=/usr/bin/php bin/worker.php
+TimeoutStartSec=6h
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/videotube/uploads
+# Use an EnvironmentFile outside the document root if DB/media settings use env vars.

@@ -1,2 +1,5 @@
-ffmpeg
-uploads
+/includes/local.php
+/includes/install.lock
+/uploads/
+/vendor/
+/includes/.install-*

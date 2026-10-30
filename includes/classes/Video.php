@@ -20,6 +20,9 @@ class Video {
         }           
     }
 
+    public function canView(string $username = ''): bool {
+        return (int)$this->sqlData['privacy'] === 1 || ($username !== '' && $username === $this->sqlData['uploadedBy']);
+    }
     public function getVideoId(){
         return $this->sqlData["id"];
     }
@@ -80,7 +83,7 @@ class Video {
           $videoId = $this->getVideoId();
           $query->execute();
 
-          return $query->fetchColumn() ?: "assets/images/icons/VideoTubeLogo.png";
+          return $query->fetchColumn() ? 'thumbnail.php?id=' . (int)$this->getVideoId() : 'assets/images/icons/VideoTubeLogo.png';
     }
 
     public function increamentViews(){
@@ -179,7 +182,7 @@ class Video {
             
             $result = array(
                 "likes" => 0,
-                "disLikes" => 1
+                "disLikes" => -1
             );
             return json_encode($result);
         }
@@ -234,18 +237,18 @@ class Video {
    public function getNumOfComments(){
         $videoId = $this->getVideoId();
         
-        $query = $this->conn->prepare("SELECT * FROM comments WHERE videoId = :videoId");
+        $query = $this->conn->prepare("SELECT COUNT(*) FROM comments WHERE videoId = :videoId");
         $query->bindParam(':videoId', $videoId);   
         
         $query->execute();
         
-        return $query->rowCount();
+        return (int)$query->fetchColumn();
    }
    
    public function getComments() {
     $id= $this->getVideoId();
         
-    $query = $this->conn->prepare("SELECT * FROM comments WHERE videoId = :videoId  ORDER BY datePosted DESC");
+    $query = $this->conn->prepare("SELECT * FROM comments WHERE videoId = :videoId AND responseTo=0 ORDER BY datePosted DESC");
     $query->bindParam(':videoId', $id);   
     
     $query->execute();

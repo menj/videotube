@@ -68,14 +68,14 @@ class User {
 
     public function getSubscriberCount(){
         
-        $query = $this->conn->prepare("SELECT * FROM subscribers WHERE userTo = :userTo");
+        $query = $this->conn->prepare("SELECT COUNT(*) FROM subscribers WHERE userTo = :userTo");
         $query->bindParam(":userTo", $username);
 
         $username = $this->getUsername();
 
         $query->execute();
 
-        return $query->rowCount();
+        return (int)$query->fetchColumn();
     
     }
 

@@ -24,7 +24,7 @@ class SelectThumbnail {
 
     private function createThumbnailItem($data) {
         $id = $data["id"];
-        $url = $data["filepath"];
+        $url = 'thumbnail.php?id=' . (int)$this->video->getVideoId() . '&thumbnail=' . (int)$data['id'];
         $videoId = $data["videoid"];
         $selected = $data["selected"] == 1 ? "selected" : "";
 

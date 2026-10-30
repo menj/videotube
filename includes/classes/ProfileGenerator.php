@@ -30,7 +30,7 @@ class ProfileGenerator {
 
     public function createCoverPhotoSection() {
         $coverPhotoSrc = $this->profileData->getCoverPhoto();
-        $name = $this->profileData->getProfileUserFullName();
+        $name = htmlspecialchars($this->profileData->getProfileUserFullName(),ENT_QUOTES,'UTF-8');
         return "<div class='coverPhotoContainer'>
                     <img src='$coverPhotoSrc' class='coverPhoto'>
                     <span class='channelName'>$name</span>
@@ -39,7 +39,7 @@ class ProfileGenerator {
 
        public function createHeaderSection() {
         $profileImage = $this->profileData->getProfilePic();
-        $name = $this->profileData->getProfileUserFullName();
+        $name = htmlspecialchars($this->profileData->getProfileUserFullName(),ENT_QUOTES,'UTF-8');
         $subCount = $this->profileData->getSubscriberCount();
 
         $button = $this->createHeaderButton();
@@ -118,6 +118,7 @@ class ProfileGenerator {
 
         $details = $this->profileData->getAllUserDetails();
         foreach($details as $key => $value) {
+            $value = htmlspecialchars((string)$value,ENT_QUOTES,'UTF-8');
             $html .= "<span>$key: $value</span>";
         }
 

@@ -1,194 +1,78 @@
 <?php
-class VideoProcessor {
-
-    private $conn;
-    private $sizeLimit = 50000000;
-    private $allowedTypes = array( "mp4", "flv", "webm", "mkv", "vob", "ogv", "ogg", "avi", "wmv", "mov", "mpeg", "mpg");
-    private $ffmpegPath;
-    private $ffprobePath;
-    public function __construct($conn) {
-        $this->conn = $conn;
-        $this->ffmpegPath=realpath("ffmpeg/windows/ffmpeg.exe");
-        $this->ffprobePath= realpath("ffmpeg/windows/ffprobe.exe");
-    }
-
-    public function upload($videoUploadData) {
-
-        $targetDir = "uploads/videos/";
-        $videoData = $videoUploadData->videoDataArray;
-        
-        $tempFilePath = $targetDir . uniqid() . basename($videoData["name"]);
-        //uploads/videos/5aa3e9343c9ffdogs_playing.flv
-
-        $tempFilePath = str_replace(" ", "_", $tempFilePath);
-        echo "$tempFilePath";
-        //checking the size of the video
-        $isValidData = $this->processData($videoData,$tempFilePath);
-
-            if(!$isValidData){
-                return false;
+require_once __DIR__ . '/MediaCommand.php';
+require_once __DIR__ . '/../media.php';
+final class VideoProcessor {
+    private PDO $conn;
+    private const SIZE_LIMIT = 50000000;
+    public function __construct(PDO $conn) { $this->conn = $conn; }
+    public function upload($data, bool $queued=false): bool {
+        if ($queued && (PHP_SAPI!=='cli' || !$data->jobId)) throw new RuntimeException('Invalid worker invocation.');
+        $files = [];
+        try {
+            $upload = $data->videoDataArray;
+            if (!is_array($upload) || ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
+                || !is_string($upload['tmp_name'] ?? null) || !($queued ? is_file($upload['tmp_name']) : is_uploaded_file($upload['tmp_name']))) {
+                throw new InvalidArgumentException('Invalid upload.');
             }
-       
-            if(move_uploaded_file($videoData["tmp_name"],$tempFilePath)){
-            // echo "file moved succefully";
-            $finalFilePath = $targetDir . uniqid() . "mp4";
-            
-
-            if(!$this->insertVideoData($videoUploadData,$tempFilePath)){
-                echo "Insert Query failed\n";
-                return false;
+            $size = filesize($upload['tmp_name']);
+            if ($size < 1 || $size > self::SIZE_LIMIT) throw new InvalidArgumentException('Upload exceeds 50 MB.');
+            $mime = (new finfo(FILEINFO_MIME_TYPE))->file($upload['tmp_name']);
+            if (!is_string($mime) || (!str_starts_with($mime, 'video/')
+                && !in_array($mime, ['application/ogg', 'application/x-matroska'], true))) {
+                throw new InvalidArgumentException('Unsupported media.');
             }
-        //    if(!$this->convertVideoMp4($tempFilePath,$finalFilePath)){  
-        //        echo "upload failed\n";
-        //        return false;   
-        //    }
-        
-             if(!$this->generateThumbnails($tempFilePath)){
-                 echo "couldn't generate thumbnail";
-                 return false;
-             }
-             return true;
-        }
-        //echo $tempFilePath;
-        
-    }
-
-    private function processData($data,$filePath){
-        $videoType = pathinfo($filePath,PATHINFO_EXTENSION);
-
-        if(!$this->isValidSize($data)){
-          echo "File is too large. Can't be more than ".$this->sizeLimit."bytes";
-        }  
-        else if(!$this->isValidType($videoType)) {
-            echo "Invalid file type";
+            if (!is_string($data->title) || !is_string($data->description) || trim($data->title) === ''
+                || strlen($data->title) > 70 || strlen($data->description) > 1000
+                || !in_array((string)$data->privacy, ['0','1'], true)) throw new InvalidArgumentException('Invalid video details.');
+            $query = $this->conn->prepare('SELECT id FROM categories WHERE id=?');
+            $query->execute([$data->categories]);
+            if (!$query->fetchColumn()) throw new InvalidArgumentException('Invalid topic.');
+            $root = dirname(__DIR__, 2);
+            $relative = 'uploads/videos/' . ($queued ? 'job-'.$data->jobId : bin2hex(random_bytes(16)));
+            if (!is_dir($root . '/uploads/videos/thumbnails')
+                && !mkdir($root . '/uploads/videos/thumbnails', 0750, true)
+                && !is_dir($root . '/uploads/videos/thumbnails')) throw new RuntimeException('Cannot create upload directory.');
+            $source = $root . '/' . $relative . '.source'; $files[] = $source;
+            if (!($queued ? copy($upload['tmp_name'], $source) : move_uploaded_file($upload['tmp_name'], $source))) throw new RuntimeException('Cannot store upload.');
+            $ffprobe = mediaBinary('ffprobe');
+            $ffmpeg = mediaBinary('ffmpeg');
+            // Restrict demuxer protocols so malicious playlists cannot fetch network resources.
+            $probe = MediaCommand::run([$ffprobe, '-v', 'error', '-protocol_whitelist', 'file,pipe',
+                '-select_streams', 'v:0', '-show_entries', 'stream=codec_type:format=duration', '-of', 'json', $source], 20);
+            $metadata = json_decode($probe, true, 512, JSON_THROW_ON_ERROR);
+            $duration = (float)($metadata['format']['duration'] ?? 0);
+            if (($metadata['streams'][0]['codec_type'] ?? '') !== 'video' || !is_finite($duration)
+                || $duration <= 0 || $duration > 14400) throw new InvalidArgumentException('Invalid video duration.');
+            $output = $root . '/' . $relative . '.mp4'; $files[] = $output;
+            MediaCommand::run([$ffmpeg, '-nostdin', '-v', 'error', '-protocol_whitelist', 'file,pipe', '-i', $source,
+                '-map', '0:v:0', '-map', '0:a:0?', '-c:v', 'libx264', '-preset', 'veryfast', '-threads', '2',
+                '-vf', 'scale=w=1280:h=720:force_original_aspect_ratio=decrease:force_divisible_by=2', '-fs', '100000000', '-c:a', 'aac', '-movflags', '+faststart', '-y', $output]);
+            $converted = json_decode(MediaCommand::run([$ffprobe, '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', $output], 20), true, 512, JSON_THROW_ON_ERROR);
+            if (abs((float)($converted['format']['duration'] ?? 0) - $duration) > 2 || filesize($output) >= 100000000) throw new RuntimeException('Converted video exceeded output limits.');
+            $thumbRelative = 'uploads/videos/thumbnails/' . ($queued ? 'job-'.$data->jobId : bin2hex(random_bytes(16))) . '.jpg';
+            $thumb = $root . '/' . $thumbRelative; $files[] = $thumb;
+            MediaCommand::run([$ffmpeg, '-nostdin', '-v', 'error', '-ss', (string)($duration / 2), '-i', $output,
+                '-frames:v', '1', '-vf', 'scale=320:-2', '-threads', '1', '-y', $thumb], 20);
+            if (!is_file($output) || !filesize($output) || !is_file($thumb) || !filesize($thumb)) throw new RuntimeException('Incomplete media.');
+            $seconds = (int)$duration;
+            $formatted = $seconds >= 3600 ? sprintf('%d:%02d:%02d', intdiv($seconds,3600), intdiv($seconds%3600,60), $seconds%60)
+                : sprintf('%02d:%02d', intdiv($seconds,60), $seconds%60);
+            $this->conn->beginTransaction();
+            $active=$this->conn->prepare('SELECT id FROM users WHERE username=? AND suspended=0 AND emailVerifiedAt IS NOT NULL FOR UPDATE');$active->execute([$data->uploadedBy]);
+            if (!$active->fetchColumn()) throw new RuntimeException('Account is no longer allowed to publish.');
+            $query = $this->conn->prepare('INSERT INTO videos (title,uploadedBy,description,category,privacy,filePath,views,duration,uploadJobId) VALUES (?,?,?,?,?,?,0,?,?)');
+            $query->execute([$data->title, $data->uploadedBy, $data->description, $data->categories, $data->privacy, $relative . '.mp4', $formatted, $data->jobId]);
+            $id = $this->conn->lastInsertId();
+            $query = $this->conn->prepare('INSERT INTO thumbnails(videoId,filePath,selected) VALUES (?,?,1)');
+            $query->execute([$id, $thumbRelative]);
+            $this->conn->commit();
+            unlink($source);
+            return true;
+        } catch (Throwable $e) {
+            if ($this->conn->inTransaction()) $this->conn->rollBack();
+            foreach ($files as $path) if (is_file($path)) unlink($path);
+            error_log('Video upload failed: ' . $e->getMessage());
             return false;
-        } 
-        else if($this->hasError($data)){
-            echo "Error code : ". $data["error"];
-            return false;
-        }    
-        return true;
-    }
-
-    private function isValidSize($data){
-        return $data['size'] <= $this->sizeLimit;
-    }
-
-    private function isValidType($type) {
-        $lowercased = strtolower($type);
-        return in_array($lowercased, $this->allowedTypes);
-    }
-
-    private function hasError($data){
-        return $data["error"] != 0;
-    }
-     
-    //Inserting the data to the database..
-    private function insertVideoData($videoUploadData,$finalFilePath){
-        $query = $this->conn->prepare("INSERT INTO videos(title,uploadedBy,description,category,privacy,filePath)
-                                       VALUES(:title,:uploadedBy,:description,:category,:privacy,:filePath)");
-        $query->bindParam(":title",$videoUploadData->title);
-        $query->bindParam(":uploadedBy",$videoUploadData->uploadedBy);
-        $query->bindParam(":description",$videoUploadData->description);
-        $query->bindParam(":category",$videoUploadData->categories);
-        $query->bindParam(":privacy",$videoUploadData->privacy);
-        $query->bindParam(":filePath",$finalFilePath);
-
-        return $query->execute();
-
-    }
-
-    // //Converting the videos to MP4 format
-    // private function convertVideoMp4($tempFilePath,$finalFilePath){
-    //     $cmd = "$this->ffmpegPath -i $tempFilePath $finalFilePath 2>&1";
-         
-    //      $outputLog = array();
-    //      exec($cmd,$outputLog,$returnCode);
-
-    //      if($returnCode !=0 ){
-    //          //Command failed
-    //          foreach($outputLog as $line){
-    //              echo $line . "<br>";
-    //          }
-    //          return false;
-    //      }
-        
-    //      return true;
-    // }
-
-    //Generating thumbnails
-    public function generateThumbnails($filePath) {
-
-        $thumbnailSize = "210x118";
-        $numThumbnails = 3;
-        $pathToThumbnail = "uploads/videos/thumbnails";
-        
-        $duration = $this->getVideoDuration($filePath);
-        //echo "duration of the video $duration";
-        $videoId = $this->conn->lastInsertId();
-        $this->upadateDuration($duration,$videoId); 
-
-        for($num = 1; $num <= $numThumbnails; $num++) {
-            $imageName = uniqid() . ".jpg";
-            $interval = ($duration * 0.8) / $numThumbnails * $num;
-            $fullThumbnailPath = "$pathToThumbnail/$videoId-$imageName";
-
-            $cmd = "$this->ffmpegPath -i $filePath -ss $interval -s $thumbnailSize -vframes 1 $fullThumbnailPath 2>&1";
-
-            $outputLog = array();
-            exec($cmd, $outputLog, $returnCode);
-            
-            if($returnCode != 0) {
-                //Command failed
-                foreach($outputLog as $line) {
-                    echo $line . "<br>";
-                }
-            }
-
-            $query = $this->conn->prepare("INSERT INTO thumbnails(videoId, filePath, selected)
-                                        VALUES(:videoId, :filePath, :selected)");
-          
-            $query->bindParam(":videoId", $videoId);
-            $query->bindParam(":filePath", $fullThumbnailPath);
-            $query->bindParam(":selected", $selected);
-
-            $selected = $num == 1 ? 1 : 0;
-
-            $success = $query->execute();
-
-            if(!$success) {
-                echo "Error inserting thumbail\n";
-                return false;
-            }
         }
-
-        return true;
-
-    }
-
-    private function getVideoDuration($filePath) {
-        return (int)shell_exec("$this->ffprobePath -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $filePath");
-    }
-
-    private function upadateDuration($duration, $videoId){
-        $duration = $duration;
-        $hours = floor($duration / 3600);
-        $mins = floor(($duration - ($hours*3600)) / 60);
-        $secs = floor($duration % 60);
-
-        echo " Generating the video duration  $hours.$mins.$secs";
-        
-        
-        $hours = ($hours < 1) ? "" : $hours . ":";
-        $mins = ($mins < 10) ? "0" . $mins . ":" : $mins . ":";
-        $secs = ($secs < 10) ? "0" . $secs : $secs;
-        
-        $duration = $hours.$mins.$secs;
-
-        $query = $this->conn->prepare("UPDATE videos SET duration=:duration WHERE id=:videoId");
-        $query->bindParam(":duration", $duration);
-        $query->bindParam(":videoId", $videoId);
-        $query->execute();
     }
 }
-?>

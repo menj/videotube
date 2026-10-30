@@ -52,33 +52,7 @@ VideoTube is a video uploading site containing standard features of YouTube that
 
 #### Installation
 
- - Install <a href="https://www.apachefriends.org/index.html">XAMPP</a> or <a href="https://sourceforge.net/projects/wampserver/">WAMPP</a>.
-
- - Open XAMPP Control panal and start [apache] and [mysql] .
-
- - Download project from github(https://github.com/manoharys/VideoTube.git)
-   OR follow gitbash commands
-
-```html
-     cd C:\\xampp\htdocs\
-
-     git clone https://github.com/manoharys/VideoTube.git
-```  
-  - extract files in C:\xampp\htdocs.
-
-  - open link localhost/phpmyadmin.
-  
-  - click on new at side navbar.
-
-  - give a database name as VideoTube and click import.
-
-  - browse the file in directory[VideoTUbe/database/videotube.sql].
-
-  - after importing successfully.
-
-  - open any browser and type http://localhost/VideoTube.
-  
-  
+Follow [INSTALL.md](INSTALL.md) for protected browser setup. Use a fresh empty database; the installer creates the complete schema and your first account.
 
 [Back To The Top](#videotube)
 
@@ -87,8 +61,8 @@ VideoTube is a video uploading site containing standard features of YouTube that
 
 - **PHP 8.4 or newer** (older releases are rejected by the application bootstrap).
 - PHP extensions: PDO and PDO MySQL. PDO SQLite is also required for development tests.
-- MySQL or MariaDB, with the database imported from `database/videotube.sql`.
-- FFmpeg and FFprobe for video metadata and thumbnails. The existing Windows executable paths remain in `VideoProcessor`; configure those paths for your host before enabling uploads.
+- MySQL or MariaDB, with the database imported from `database/schema.sql`.
+- FFmpeg and FFprobe for video metadata and thumbnails. Set executable paths in the installer or VIDEOTUBE_FFMPEG and VIDEOTUBE_FFPROBE.
 - Apache or another PHP-capable web server, and a modern browser.
 
 Optional database environment variables: `VIDEOTUBE_DSN`, `VIDEOTUBE_DB_USER`, and `VIDEOTUBE_DB_PASSWORD`. Without these, the original local `VideoTube` database defaults apply.

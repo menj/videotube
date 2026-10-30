@@ -27,6 +27,9 @@ class NavigationMenuProvider {
     }
 
     private function createNavItem($text, $icon, $link) {
+        $text=htmlspecialchars($text,ENT_QUOTES,'UTF-8');
+        $icon=htmlspecialchars($icon,ENT_QUOTES,'UTF-8');
+        $link=htmlspecialchars($link,ENT_QUOTES,'UTF-8');
         return "<div class='navigationItem'>
                     <a href='$link'>
                         <img src='$icon'>

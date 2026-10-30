@@ -61,11 +61,27 @@ $videos = $data->getUsersVideos();
 check(count($videos) === 1 && $videos[0] instanceof Video, 'Profile video objects');
 check($videos[0]->wasLiked() === false, 'Profile passes User object');
 $db->exec("INSERT INTO thumbnails VALUES(1,1,'thumb.jpg',1)");
-check(str_contains((new SelectThumbnail($db,$video))->create(),'thumb.jpg'), 'Actual thumbnail column names');
+check(str_contains((new SelectThumbnail($db,$video))->create(),'thumbnail.php?id=1&thumbnail=1'), 'Actual thumbnail column names');
 foreach (['FormString','FormUser','FormEmail','FormPassword'] as $name) {
     $method = 'sanitizing' . $name;
     check(is_string(FormSanitizer::$method('Example')), 'Form sanitizer ' . $name);
 }
+check(FormSanitizer::sanitizingFormString('  Mohd Elfie  ') === 'Mohd Elfie', 'Preserve spaces and casing in names');
+check(FormSanitizer::sanitizingFormEmail('  Mixed.Case@example.test ') === 'Mixed.Case@example.test', 'Preserve email local-part casing');
+check(FormSanitizer::sanitizingFormUser('bad name') === 'bad name', 'Do not silently rewrite invalid usernames');
+foreach (['bytes=0-9'=>[0,9], 'bytes=90-'=>[90,99], 'bytes=-10'=>[90,99], 'bytes=0-999'=>[0,99]] as $header=>$expected) {
+    check(MediaRange::parse($header,100)===$expected,'Byte range '.$header);
+}
+foreach (['bytes=100-','bytes=-0','bytes=9-2','bytes=0-1,4-5'] as $header) {
+    try { MediaRange::parse($header,100); check(false,'Invalid range accepted'); }
+    catch (RangeException $e) { check(true,'Invalid range rejected'); }
+}
+check(count((new SubscriptionsProvider($db,$viewer))->getVideos())===1,'Subscription feed uses subscribed public videos');
+$db->exec("UPDATE videos SET privacy=0 WHERE id=1");
+check((new SubscriptionsProvider($db,$viewer))->getVideos()===[],'Private video excluded from subscriptions');
+$db->exec("INSERT INTO likes VALUES(99,'viewer',0,1)");
+check((new LikedVideosProvider($db,$viewer))->getVideos()===[],'Private liked video hidden from other users');
+$db->exec("DELETE FROM likes WHERE id=99; UPDATE videos SET privacy=1 WHERE id=1");
 $guestVideo = new Video($db,1,$guest);
 $guestComment = new Comment($db,['id'=>1],$guest,1);
 foreach ([$guestVideo, $guestComment] as $subject) {

@@ -22,8 +22,8 @@
         }
 
         private function createThumbnail() {
-            $thumbnail = $this->video->getVideoThumbnail();
-            $duration = $this->video->getVideoDuration();
+            $thumbnail = htmlspecialchars((string)$this->video->getVideoThumbnail(),ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+            $duration = htmlspecialchars((string)$this->video->getVideoDuration(),ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
 
             return "<div class='thumbnail'>
                         <img src='$thumbnail'>
@@ -35,8 +35,8 @@
         }
 
         private function createDetails() {
-           $title = $this->video->getVideoTitle();
-           $username = $this->video->getVideoUploadedBy(); 
+           $title = htmlspecialchars((string)$this->video->getVideoTitle(),ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+           $username = htmlspecialchars((string)$this->video->getVideoUploadedBy(),ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8'); 
            $views = $this->video->getVideoViews(); 
            $description =  $this->createDescription();
            $timeStamp = $this->video->getVideoTimeStamp(); 
@@ -60,8 +60,8 @@
                 return "";
             }
             else {
-                $description = $this->video->getVideoDescription();
-                $description = (strlen($description) > 350) ? substr($description, 0, 347)."..." : $description;
+                $description = htmlspecialchars((string)$this->video->getVideoDescription(),ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+
 
                 return "<span class='description'>$description</span>";
             }

@@ -7,14 +7,15 @@
   $account = new Account($conn);
 
   if(isset($_POST["submitButton"])){
-    $username = FormSanitizer::sanitizingFormUser($_POST["username"]);
-    $password = FormSanitizer::sanitizingFormPassword($_POST["password"]);
+    $username = FormSanitizer::sanitizingFormUser(inputText('username',$_POST));
+    $password = FormSanitizer::sanitizingFormPassword(inputText('password',$_POST));
 
     $wasSuccessful = $account->login($username, $password);
       
     if($wasSuccessful){
-       $_SESSION["userLoggedIn"] = $username;
+       startAuthenticatedSession($conn, $username);
        header("Location: index.php");
+       exit;
     }
     else{
        echo "Login failed";
@@ -25,7 +26,7 @@
 
   function getInputValues($name){
     if(isset($_POST[$name])){
-        echo $_POST[$name];
+        echo h(inputText($name,$_POST));
     }
   }
 ?>
@@ -54,9 +55,10 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
         integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous">
     </script>
-  </head>
+  <link rel="stylesheet" href="assets/CSS/fonts.css">
+</head>
 
-   <body> 
+   <body><p><a href="account.php">Forgot password?</a></p> 
          <div class="signInContainer">
              <div class="column">
                 <div class="header">

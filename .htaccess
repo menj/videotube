@@ -1,0 +1,7 @@
+Options -Indexes
+<FilesMatch "^(composer\.(json|lock)|INSTALL\.md|TODO\.md)$">
+Require all denied
+</FilesMatch>
+RewriteEngine On
+RewriteRule (^|/)\. - [F,L]
+RewriteRule ^(?:includes|database|tests|bin|uploads)(?:/|$) - [F,L]

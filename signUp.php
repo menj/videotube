@@ -11,25 +11,26 @@
       
       
       //firstName & lastName
-      $firstName = FormSanitizer::sanitizingFormString($_POST["firstName"]);
-      $lastName = FormSanitizer::sanitizingFormString($_POST["lastName"]);
+      $firstName = FormSanitizer::sanitizingFormString(inputText('firstName',$_POST));
+      $lastName = FormSanitizer::sanitizingFormString(inputText('lastName',$_POST));
   
       //Username
-      $username = FormSanitizer::sanitizingFormUser($_POST["username"]);
+      $username = FormSanitizer::sanitizingFormUser(inputText('username',$_POST));
 
       //emails
-      $email = FormSanitizer::sanitizingFormEmail($_POST["email"]);
-      $email2 = FormSanitizer::sanitizingFormEmail($_POST["email2"]);
+      $email = FormSanitizer::sanitizingFormEmail(inputText('email',$_POST));
+      $email2 = FormSanitizer::sanitizingFormEmail(inputText('email2',$_POST));
 
       //password
-      $password = FormSanitizer::sanitizingFormPassword($_POST["password"]);
-      $password2 = FormSanitizer::sanitizingFormPassword($_POST["password2"]);
+      $password = FormSanitizer::sanitizingFormPassword(inputText('password',$_POST));
+      $password2 = FormSanitizer::sanitizingFormPassword(inputText('password2',$_POST));
      
      $wasSuccessful = $account->register($firstName, $lastName, $username, $email, $email2, $password, $password2);
       
      if($wasSuccessful){
-        $_SESSION["userLoggedIn"] = $username;
-        header("Location: index.php");
+        startAuthenticatedSession($conn, $username);
+        header("Location: account.php");
+       exit;
      }
      else{
        echo "login failed";
@@ -38,7 +39,7 @@
 
      function getInputValues($name){
        if(isset($_POST[$name])){
-           echo $_POST[$name];
+           echo h(inputText($name,$_POST));
        }
      }
   
@@ -69,6 +70,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
         integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous">
     </script>
+<link rel="stylesheet" href="assets/CSS/fonts.css">
 </head>
 
 <body>
@@ -83,27 +85,27 @@
                 <form action="signUp.php" method="POST">
                    <!-- displaying error message if any -->
                    <?php 
-                     echo $account->getError(Constants::$firstNameCharacter);
+                     echo $account->getError(Constants::$firstNameCharacters);
                    ?>
                    <input type="text" name="firstName" placeholder="first name" autocomplete='off' value="<?php getInputValues('firstName') ?>" required>
 
                    
                    <!-- displaying error message if any -->
                    <?php 
-                     echo $account->getError(Constants::$lastNameCharacter);
+                     echo $account->getError(Constants::$lastNameCharacters);
                    ?>
                    <input type="text" name="lastName" placeholder="last name" autocomplete='off' value="<?php getInputValues('lastName') ?>" required>
 
                    <!-- displaying error message if any -->
                    <?php 
-                     echo $account->getError(Constants::$usernameCharacter);
+                     echo $account->getError(Constants::$usernameCharacters);
                      echo $account->getError(Constants::$usernameTaken); 
                    ?>
                    <input type="text" name="username" placeholder="User name" autocomplete='off' value="<?php getInputValues('username') ?>" required>
 
                    <!-- displaying error message if any -->
                    <?php 
-                     echo $account->getError(Constants::$emailDoNotMatch);
+                     echo $account->getError(Constants::$emailsDoNotMatch);
                      echo $account->getError(Constants::$emailTaken); 
                    ?>
                    <input type="email" name="email" placeholder="email" autocomplete='off' value="<?php getInputValues('email') ?>" required>

@@ -1,6 +1,7 @@
 <?php
    
     class VideoUploadData {
+        public ?int $jobId = null;
         public $videoDataArray,$title,$description,$categories,$privacy,$uploadedBy;
         //constructor
         public function __construct($videoDataArray,$title,$description,$categories,$privacy,$uploadedBy){
