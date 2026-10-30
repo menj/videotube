@@ -1,0 +1,10 @@
+[Unit]
+Description=Process pending VideoTube uploads
+
+[Timer]
+OnBootSec=30s
+OnUnitInactiveSec=10s
+Unit=videotube-worker.service
+
+[Install]
+WantedBy=timers.target

@@ -7,7 +7,7 @@ subprocess.run(['php','-r', '$db=new PDO("mysql:host=127.0.0.1","root","test"); 
 outbox=pathlib.Path('/tmp/videotube-mail');outbox.mkdir(exist_ok=True)
 env=dict(os.environ,VIDEOTUBE_INSTALL_TOKEN='ci-only-install-token-01234567890123456789',VIDEOTUBE_ENV='test',VIDEOTUBE_BASE_URL='http://127.0.0.1:8089',VIDEOTUBE_TEST_MAIL_DIR=str(outbox))
 def mail_link(purpose,email):
- messages=[json.loads(p.read_text()) for p in outbox.glob('*.json')]
+ messages=[json.loads(p.read_text()) for p in sorted(outbox.glob('*.json'),key=lambda p:p.stat().st_mtime_ns)]
  matches=[m for m in messages if m['purpose']==purpose and m['to']==email]
  assert matches, (purpose,email)
  return matches[-1]['url'].split('8089/')[1]

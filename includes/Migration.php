@@ -28,8 +28,8 @@ final class Migration {
             foreach (['role'=>"VARCHAR(16) NOT NULL DEFAULT 'user'",'suspended'=>'TINYINT NOT NULL DEFAULT 0','sessionVersion'=>'INT NOT NULL DEFAULT 0','emailVerifiedAt'=>'DATETIME NULL'] as $name=>$definition) if (!in_array($name,$columns,true)) $plan[]="ALTER TABLE users ADD `$name` $definition";
             $columns=$db->query('SHOW COLUMNS FROM videos')->fetchAll(PDO::FETCH_COLUMN);
             if (!in_array('uploadJobId',$columns,true)) $plan[]='ALTER TABLE videos ADD uploadJobId BIGINT NULL UNIQUE';
-            $plan[]='ALTER TABLE users MODIFY password VARCHAR(255) NOT NULL, MODIFY email VARCHAR(191) NOT NULL, ALTER singUpDate SET DEFAULT CURRENT_TIMESTAMP';
-            $plan[]="ALTER TABLE videos ALTER uploadDate SET DEFAULT CURRENT_TIMESTAMP, ALTER views SET DEFAULT 0, ALTER duration SET DEFAULT '00:00'";
+            $plan[]='ALTER TABLE users MODIFY password VARCHAR(255) NOT NULL, MODIFY email VARCHAR(191) NOT NULL, MODIFY singUpDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP';
+            $plan[]="ALTER TABLE videos MODIFY uploadDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, ALTER views SET DEFAULT 0, ALTER duration SET DEFAULT '00:00'";
             foreach (['likes','dislikes'] as $table) if (in_array($table,$tables,true)) {
                 $plan[]="UPDATE `$table` SET videoId=COALESCE(videoId,0),commentId=COALESCE(commentId,0)";
                 $plan[]="ALTER TABLE `$table` MODIFY videoId INT NOT NULL DEFAULT 0, MODIFY commentId INT NOT NULL DEFAULT 0";

@@ -1,33 +1,48 @@
-# Installation and deployment (PHP 8.4+)
+# Install VideoTube — PHP 8.4 and newer
 
-1. Use PHP 8.4 or newer with PDO MySQL and Fileinfo. Enable `proc_open`. Install FFmpeg/FFprobe with H.264 (`libx264`), AAC and JPEG support. CI tests PHP 8.4/8.5 and MySQL 8.4.
-2. Create an **empty** MySQL database. During installation its account needs CREATE, DROP, SELECT, INSERT, UPDATE and DELETE privileges. DROP is needed to clean up a failed installation. After installation revoke CREATE and DROP.
-3. Configure HTTPS and the web server restrictions below **before** opening the installer. Set `VIDEOTUBE_INSTALL_TOKEN` to a private random secret of at least 32 characters, generated with `php -r 'echo bin2hex(random_bytes(32));'`.
-4. Temporarily allow PHP to write to `includes/`. Open `/install.php` and enter the token, database details, first account, and absolute FFmpeg/FFprobe paths. Passwords must be 12–72 bytes.
-5. The installer creates the schema and first account, then atomically publishes private `includes/local.php`. It refuses nonempty databases and concurrent installation. Failed attempts remove only tables they created. Check server logs if cleanup itself fails, for example because DROP permission was missing.
-6. Remove the installation token. Make `includes/` read-only to PHP again; retain read access to `local.php`. Keep `uploads/videos/` and `uploads/videos/thumbnails/` writable. Never commit local.php or backups. Do not remove local.php to reinstall.
-7. Sign in, upload a short test video, check playback/seek/thumbnail, edit its visibility, and confirm a logged-out browser cannot access a private video.
+## Requirements
 
-## Web server
+PHP 8.4+ with PDO MySQL, Fileinfo and `proc_open`; MySQL 8.4 is exercised in CI. FFmpeg/FFprobe must support libx264, AAC and JPEG. The installer checks the executable versions and encoders. Use HTTPS and a dedicated service/database account.
 
-Apache 2.4: enable mod_rewrite and allow the supplied `.htaccess` rules (`AllowOverride FileInfo Options AuthConfig`). The root rules deny direct requests to includes, database, tests, bin, uploads and hidden files. PHP endpoints serve authorized media. **Verify these rules work**: `/database/schema.sql`, `/includes/local.php`, `/uploads/videos/example.mp4` and `/.git/config` must return 403/404.
+## Fresh installation
 
-Nginx: apply `deploy/nginx.conf.example` inside the server block before generic PHP handling. Configure PHP-FPM and TLS for your host. PHP's development server is for testing only and does not enforce `.htaccess`.
+1. Configure Apache or Nginx restrictions below, PHP and TLS. Create an empty database with a temporary account allowed CREATE, DROP, SELECT, INSERT, UPDATE and DELETE. DROP allows cleanup on failed setup.
+2. Set `VIDEOTUBE_INSTALL_TOKEN` to a private random secret of at least 32 characters (`php -r 'echo bin2hex(random_bytes(32));'`). Temporarily allow PHP to write to `includes/`.
+3. Open `/install.php`, supply database details, FFmpeg/FFprobe absolute paths and the first administrator account. The first administrator is trusted as the bootstrap owner; ordinary signups must verify their email.
+4. Setup refuses existing tables, locks concurrent attempts, and removes newly created tables on failure. Configuration is staged privately and renamed to `includes/local.php` only after database setup succeeds. Inspect logs if rollback lacks permissions or otherwise fails.
+5. Remove the installation token. Make `includes/` read-only to PHP, retaining read access to local.php. Revoke CREATE and DROP database privileges. Keep `uploads/` writable. Never commit local.php or backups.
+6. Configure email and the worker below. Sign in; administration is at `/admin.php`. The dashboard manages users, roles, suspension, videos, comments and audit history. Removing a video/comment deletes its database records. Protected media files remain for backup recovery; they are no longer reachable through application endpoints. Keep at least one active administrator.
 
-The application rejects plain HTTP except loopback requests to PHP's development server. Behind a TLS-terminating reverse proxy, set `VIDEOTUBE_HTTPS=1` only in a backend environment that is inaccessible directly and whose proxy enforces HTTPS. Client-supplied forwarded headers are deliberately not trusted.
+## Email verification and password recovery
 
-Set PHP `upload_max_filesize=50M`, `post_max_size=52M`, `max_execution_time=180` and matching web-server/FPM timeouts. The application accepts files up to 50,000,000 bytes and videos up to four hours; conversion has a 120-second deadline and is intended for small videos. Large/slow conversions fail cleanly. A worker queue is needed for a large video service. Restrict network and filesystem access for the PHP/FFmpeg service account, keep FFmpeg patched, and set disk/CPU/process quotas.
+Set `VIDEOTUBE_BASE_URL=https://your-host/path` (no trailing slash required) and `VIDEOTUBE_MAIL_FROM=noreply@your-host`. Configure PHP's mail transport to a working local MTA/SMTP relay; configure SPF/DKIM at the mail provider. No browser-supplied host is used in email links.
 
-## Operations
+`/account.php` provides verification and password reset. Verification is required before uploading, voting, commenting or subscribing. Changing the email address clears verification. Reset links expire after one hour, verification links after 24 hours; both require a confirmation POST and become unusable after consumption. Tokens are stored only as hashes. Password changes/resets invalidate existing sessions; suspending a user invalidates sessions even if the user is later restored.
 
-Use a dedicated database account, protected PHP session storage and server-side error logs. Back up the database, local.php and uploaded media together, encrypt backups, and test restoration. Monitor HTTP errors, disk space, failed uploads and database availability. Do not expose logs or backups through the document root.
+The `VIDEOTUBE_ENV=test` and `VIDEOTUBE_TEST_MAIL_DIR` outbox transport exists solely for automated tests and writes outside the document root. Never set these on production. Confirm actual email delivery before opening registration. Mail failures are recorded in server logs; visitors receive the same response for known/unknown addresses.
 
-This CMS has ordinary user accounts and owner-only video editing; it does not yet provide administrator moderation, account recovery/email verification or a distributed upload queue. Those are separate product features, not capabilities supplied by this installer. Decide whether they are required before opening registration to an untrusted public audience.
+## Background uploads
 
-## Existing data
+Web requests validate and queue uploads; `/jobs.php` shows progress. Run `php bin/worker.php --once` to process one job or `php bin/worker.php` to process up to 100 jobs and exit. Schedule the latter every minute using cron, or adapt the supplied systemd service/timer examples. Use the same configuration, filesystem and service user as PHP. Do not use PHP's development server in production.
 
-The installer is a fresh-install tool, not a legacy migration. Never import the clean schema over an existing database. Existing deployments need a backed-up, reviewed schema migration (including request_limits and unique vote indexes) before running this version. Legacy SHA-512 passwords are upgraded to modern password hashes after a successful login.
+Jobs are database-backed. A database advisory lock permits one worker per database; a restarted worker resumes an interrupted processing job. A unique job reference on videos prevents publication twice after a crash. Sources are deleted after success/failure. Failed jobs show a generic error; users can upload again. Each account may have three pending jobs. Keep uploads on persistent shared storage at a stable absolute path across releases; include both database and files in backups.
 
-## Tests
+Limits: 50,000,000-byte input, four-hour duration, 120-second conversion deadline, 100,000,000-byte output cap and maximum 1280×720 dimensions. Long/expensive conversions fail cleanly. Scale these limits and the worker architecture only after measuring host capacity. Set PHP `upload_max_filesize=50M`, `post_max_size=52M`; matching web-server request limits are required. Keep FFmpeg patched and isolate its process with OS disk/CPU/memory/network limits. Review stored orphan files during maintenance; never remove files referenced by videos or active jobs.
 
-`composer test` runs the PHP regression suite. CI also runs `tests/install.php` against a disposable MySQL database, including injected SQL/configuration-publish failures and reinstall rejection. `tests/browser_flow.py` starts a disposable PHP server, installs a separate database, and exercises real upload/transcoding, access checks, CSRF, editing, comments, voting and streaming ranges. Never run integration tests against production data.
+## Existing databases
+
+The CLI migration preserves user/video records and password hashes; it creates missing tables and columns, sets required defaults/indexes and converts legacy core tables to InnoDB. It does not import phpLD data.
+
+1. Stop web traffic and all workers. Back up and test restoration of the database, local.php and uploads together. Migration uses DDL, which MySQL does not roll back atomically.
+2. Configure the existing connection via local.php or `VIDEOTUBE_DSN`, `VIDEOTUBE_DB_USER`, `VIDEOTUBE_DB_PASSWORD`. Temporarily grant ALTER, CREATE and INDEX plus normal data privileges.
+3. Run `php bin/migrate.php --admin=EXACT_EXISTING_USERNAME --dry-run`. This prints the plan without changing data and rejects unsupported schemas, duplicate accounts/votes/subscriptions and overlong email addresses. Resolve reported data issues explicitly; no duplicates are silently deleted.
+4. Run `php bin/migrate.php --admin=EXACT_EXISTING_USERNAME --backup-confirmed`. The chosen user becomes the active, verified administrator. If a DDL step fails, inspect the log, repair the prerequisite and rerun; completed additive steps are detected. Do not blindly restore only one component of a live system.
+5. Revoke migration privileges, restart workers, run staging checks, then reopen traffic. Existing users must sign in again and verify email. Old SHA-512 hashes upgrade after successful login. Existing local MP4 files/thumbnails remain protected by the media endpoints; re-upload unsupported legacy media to transcode it.
+
+## Web servers and operations
+
+Apache 2.4: enable mod_rewrite and the root `.htaccess` with `AllowOverride FileInfo Options AuthConfig`. Nginx: include `deploy/nginx.conf.example` before generic PHP handling, adapting path prefixes if hosted below a subdirectory. The shipped example assumes the domain root. Verify `/includes/local.php`, `/database/schema.sql`, `/bin/worker.php`, `/uploads/videos/example.mp4` and `/.git/config` return 403/404. CI exercises these restrictions against Apache and Nginx.
+
+Plain HTTP is rejected except loopback requests to PHP's development server. Behind a TLS-terminating proxy, set `VIDEOTUBE_HTTPS=1` only in an inaccessible backend whose proxy enforces HTTPS. Client forwarded headers are not trusted. Use protected PHP session storage, server-side logs, encrypted backups and tested restores. Monitor queue backlog, failed mail/uploads, error rates, disk space and database health.
+
+CI runs PHP 8.4/8.5 regressions, rejects PHP 8.3, exercises fresh installation/rollback, a representative legacy migration, account recovery/verification, authorization/moderation and queued FFmpeg processing. These are disposable staging tests. Production DNS, certificates, email deliverability, cron/service operation, capacity and backup restoration still must be checked on the actual target host.
