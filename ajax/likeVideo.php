@@ -5,7 +5,7 @@
 
     
         $videoId = $_POST["videoId"]; 
-        $username = $_SESSION["userLoggedIn"];
+        $username = ($_SESSION["userLoggedIn"] ?? "");
 
         $userLoggedInObj = new User($conn, $username);
 

@@ -22,7 +22,7 @@ class ProfileData {
         $profileUsername = $this->getProfileUsername();
         $query->execute();
 
-        return $query->rowCount() != 0;
+        return $query->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
     public function getCoverPhoto() {
@@ -51,7 +51,7 @@ class ProfileData {
 
         $videos = array();
         while($row = $query->fetch(PDO::FETCH_ASSOC)) {
-            $videos[] = new Video($this->conn, $row, $this->profileUserObj->getUsername());
+            $videos[] = new Video($this->conn, $row, $this->profileUserObj);
         }
         return $videos;
   }

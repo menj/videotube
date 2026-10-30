@@ -80,8 +80,10 @@
         $ago = new DateTime($datetime);
         $diff = $now->diff($ago);
     
-        $diff->w = floor($diff->d / 7);
-        $diff->d -= $diff->w * 7;
+        $parts = [
+            'y' => $diff->y, 'm' => $diff->m, 'w' => intdiv($diff->d, 7),
+            'd' => $diff->d % 7, 'h' => $diff->h, 'i' => $diff->i, 's' => $diff->s,
+        ];
     
         $string = array(
             'y' => 'year',
@@ -93,8 +95,8 @@
             's' => 'second',
         );
         foreach ($string as $k => &$v) {
-            if ($diff->$k) {
-                $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
+            if ($parts[$k]) {
+                $v = $parts[$k] . ' ' . $v . ($parts[$k] > 1 ? 's' : '');
             } else {
                 unset($string[$k]);
             }
@@ -122,7 +124,7 @@
     
         $query->execute();
         
-        return $query->rowCount() > 0;
+        return $query->fetch(PDO::FETCH_ASSOC) !== false;
      }
 
         public function wasDisLiked() {
@@ -135,7 +137,7 @@
 
             $query->execute();
             
-            return $query->rowCount() > 0;
+            return $query->fetch(PDO::FETCH_ASSOC) !== false;
         }
 
        public function getLikes(){
@@ -159,6 +161,10 @@
        }
 
        public function like(){
+        if ($this->userLoggedInObj->getUsername() === '') {
+            http_response_code(403);
+            return json_encode(['error' => 'Sign in to vote.']);
+        }
         $commentId = $this->getId();
         $username = $this->userLoggedInObj->getUsername();
         if($this->wasLiked()){
@@ -190,6 +196,10 @@
      }
 
      public function disLike(){
+        if ($this->userLoggedInObj->getUsername() === '') {
+            http_response_code(403);
+            return json_encode(['error' => 'Sign in to vote.']);
+        }
         $commentId = $this->getId();
         $username = $this->userLoggedInObj->getUsername();
         if($this->wasDisLiked()){

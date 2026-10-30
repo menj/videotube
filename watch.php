@@ -8,11 +8,16 @@
 
 
 
-    if(!isset($_GET["id"])){
-        echo "no url passed on to the page";
+    $videoId = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    try {
+        if (!$videoId) throw new OutOfBoundsException('Video not found');
+        $video = new Video($conn, $videoId, $userLoggedInObj);
+    } catch (OutOfBoundsException $e) {
+        http_response_code(404);
+        echo 'Video not found';
+        require 'includes/footer.php';
+        exit;
     }
-
-    $video = new Video($conn, $_GET["id"], $userLoggedInObj);
     $video->increamentViews();
         
  ?>

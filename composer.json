@@ -1,0 +1,17 @@
+{
+  "name": "menj/videotube",
+  "description": "Video sharing application for PHP 8.4 and newer",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.4",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*"
+  },
+  "require-dev": {
+    "ext-pdo_sqlite": "*"
+  },
+  "scripts": {
+    "test": "php -d error_reporting=E_ALL tests/php84.php"
+  }
+}

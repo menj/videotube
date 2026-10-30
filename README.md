@@ -84,17 +84,27 @@ VideoTube is a video uploading site containing standard features of YouTube that
 
 ---
 ## Requirements
-:point_right: PHP 5.3 +
 
-:point_right: Mysql 5.0 +
+- **PHP 8.4 or newer** (older releases are rejected by the application bootstrap).
+- PHP extensions: PDO and PDO MySQL. PDO SQLite is also required for development tests.
+- MySQL or MariaDB, with the database imported from `database/videotube.sql`.
+- FFmpeg and FFprobe for video metadata and thumbnails. The existing Windows executable paths remain in `VideoProcessor`; configure those paths for your host before enabling uploads.
+- Apache or another PHP-capable web server, and a modern browser.
 
-:point_right: PDO Extension in PHP
+Optional database environment variables: `VIDEOTUBE_DSN`, `VIDEOTUBE_DB_USER`, and `VIDEOTUBE_DB_PASSWORD`. Without these, the original local `VideoTube` database defaults apply.
 
-:point_right: Web Browser FF17.0+, IE8+, Opera, Chrome .... TODO testing
+### Verify PHP compatibility
 
----
+```sh
+composer validate --no-check-publish
+composer check-platform-reqs
+composer test
+```
 
- 
+CI lints every PHP file and runs regression checks with all PHP warnings and deprecations treated as failures on PHP 8.4 and 8.5. Future PHP releases must be tested before production use; the minimum-version constraint does not guarantee compatibility with unreleased versions.
+
+This upgrade does not integrate phpLD features. Existing database setup and upload limitations are not resolved by changing the PHP runtime requirement.
+
 [Back To The Top](#videotube)
 ## License
       MIT License

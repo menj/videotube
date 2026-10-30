@@ -7,6 +7,7 @@ require_once("includes/classes/SelectThumbnail.php");
 
 if(!User::isLoggedIn()) {
     header("Location: signIn.php");
+    exit;
 }
 
 if(!isset($_GET["videoId"])) {

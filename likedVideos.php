@@ -4,6 +4,7 @@ require_once("includes/classes/LikedVideosProvider.php");
 
 if(!User::isLoggedIn()) {
     header("Location: signIn.php");
+    exit;
 }
 
 $likedVideosProvider = new LikedVideosProvider($conn, $userLoggedInObj);
