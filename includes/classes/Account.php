@@ -176,7 +176,7 @@ class Account {
             return;
         }
 
-        if(strlen($pw) > 72 || strlen($pw) < 12) $this->errorArray[] = 'Use a password of 12 to 72 bytes.';
+        if(strlen($pw) > 72 || strlen($pw) < 12) $this->errorArray[] = Constants::$passwordLength;
     }
 
     public function getError($error) {

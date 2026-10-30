@@ -7,8 +7,8 @@
   $account = new Account($conn);
 
   if(isset($_POST["submitButton"])){
-    $username = FormSanitizer::sanitizingFormUser($_POST["username"]);
-    $password = FormSanitizer::sanitizingFormPassword($_POST["password"]);
+    $username = FormSanitizer::sanitizingFormUser(inputText('username',$_POST));
+    $password = FormSanitizer::sanitizingFormPassword(inputText('password',$_POST));
 
     $wasSuccessful = $account->login($username, $password);
       

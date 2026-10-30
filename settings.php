@@ -17,9 +17,9 @@ $formProvider = new SettingsFormProvider();
 if(isset($_POST["saveDetailsButton"])) {
     $account = new Account($conn);
 
-    $firstName = FormSanitizer::sanitizingFormString($_POST["firstName"]);
-    $lastName = FormSanitizer::sanitizingFormString($_POST["lastName"]);
-    $email = FormSanitizer::sanitizingFormString($_POST["email"]);
+    $firstName = FormSanitizer::sanitizingFormString(inputText('firstName',$_POST));
+    $lastName = FormSanitizer::sanitizingFormString(inputText('lastName',$_POST));
+    $email = FormSanitizer::sanitizingFormString(inputText('email',$_POST));
 
     if($account->updateDetails($firstName, $lastName, $email, $userLoggedInObj->getusername())) {
         $detailsMessage = "<div class='alert alert-success'>
@@ -40,9 +40,9 @@ if(isset($_POST["saveDetailsButton"])) {
 if(isset($_POST["savePasswordButton"])) {
     $account = new Account($conn);
 
-    $oldPassword = FormSanitizer::sanitizingFormPassword($_POST["oldPassword"]);
-    $newPassword = FormSanitizer::sanitizingFormPassword($_POST["newPassword"]);
-    $newPassword2 = FormSanitizer::sanitizingFormPassword($_POST["newPassword2"]);
+    $oldPassword = FormSanitizer::sanitizingFormPassword(inputText('oldPassword',$_POST));
+    $newPassword = FormSanitizer::sanitizingFormPassword(inputText('newPassword',$_POST));
+    $newPassword2 = FormSanitizer::sanitizingFormPassword(inputText('newPassword2',$_POST));
 
     if($account->updatePassword($oldPassword, $newPassword, $newPassword2, $userLoggedInObj->getusername())) {
         $passwordMessage = "<div class='alert alert-success'>

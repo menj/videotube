@@ -60,3 +60,5 @@ jobs:
           extensions: pdo_mysql
           coverage: none
       - run: php tests/install.php
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: python3 tests/http.py

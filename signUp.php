@@ -11,19 +11,19 @@
       
       
       //firstName & lastName
-      $firstName = FormSanitizer::sanitizingFormString($_POST["firstName"]);
-      $lastName = FormSanitizer::sanitizingFormString($_POST["lastName"]);
+      $firstName = FormSanitizer::sanitizingFormString(inputText('firstName',$_POST));
+      $lastName = FormSanitizer::sanitizingFormString(inputText('lastName',$_POST));
   
       //Username
-      $username = FormSanitizer::sanitizingFormUser($_POST["username"]);
+      $username = FormSanitizer::sanitizingFormUser(inputText('username',$_POST));
 
       //emails
-      $email = FormSanitizer::sanitizingFormEmail($_POST["email"]);
-      $email2 = FormSanitizer::sanitizingFormEmail($_POST["email2"]);
+      $email = FormSanitizer::sanitizingFormEmail(inputText('email',$_POST));
+      $email2 = FormSanitizer::sanitizingFormEmail(inputText('email2',$_POST));
 
       //password
-      $password = FormSanitizer::sanitizingFormPassword($_POST["password"]);
-      $password2 = FormSanitizer::sanitizingFormPassword($_POST["password2"]);
+      $password = FormSanitizer::sanitizingFormPassword(inputText('password',$_POST));
+      $password2 = FormSanitizer::sanitizingFormPassword(inputText('password2',$_POST));
      
      $wasSuccessful = $account->register($firstName, $lastName, $username, $email, $email2, $password, $password2);
       

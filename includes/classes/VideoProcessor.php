@@ -45,7 +45,7 @@ final class VideoProcessor {
             $output = $root . '/' . $relative . '.mp4'; $files[] = $output;
             MediaCommand::run([$ffmpeg, '-nostdin', '-v', 'error', '-protocol_whitelist', 'file,pipe', '-i', $source,
                 '-map', '0:v:0', '-map', '0:a:0?', '-c:v', 'libx264', '-preset', 'veryfast', '-threads', '2',
-                '-c:a', 'aac', '-movflags', '+faststart', '-y', $output]);
+                '-vf', 'scale=w=1280:h=720:force_original_aspect_ratio=decrease:force_divisible_by=2', '-fs', '100000000', '-c:a', 'aac', '-movflags', '+faststart', '-y', $output]);
             $thumbRelative = 'uploads/videos/thumbnails/' . bin2hex(random_bytes(16)) . '.jpg';
             $thumb = $root . '/' . $thumbRelative; $files[] = $thumb;
             MediaCommand::run([$ffmpeg, '-nostdin', '-v', 'error', '-ss', (string)($duration / 2), '-i', $output,
