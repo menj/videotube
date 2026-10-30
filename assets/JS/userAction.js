@@ -1,14 +1,13 @@
 function subscribe(userTo, userFrom, button) {
 
     if (userTo == userFrom) {
-        alert("you cannot subscribe it yourself");
+        alert("You cannot subscribe to yourself.");
     } else {
         $.post("ajax/subscribe.php",{userTo:userTo, userFrom:userFrom})
             .done(function (count) {
-                //console.log(data);
                if(count != null){
                   $(button).toggleClass("subscribe unsubscribe");
-                  let buttonText = $(button).hasClass('subscribe') ? "SUBSCRIBE" : "UNSUBSCRIBE";
+                  let buttonText = $(button).hasClass('subscribe') ? "SUBSCRIBE" : "SUBSCRIBED";
                   $(button).text(buttonText + " " + count);   
 
                }

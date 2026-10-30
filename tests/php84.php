@@ -76,6 +76,12 @@ foreach (['bytes=100-','bytes=-0','bytes=9-2','bytes=0-1,4-5'] as $header) {
     try { MediaRange::parse($header,100); check(false,'Invalid range accepted'); }
     catch (RangeException $e) { check(true,'Invalid range rejected'); }
 }
+check(count((new SubscriptionsProvider($db,$viewer))->getVideos())===1,'Subscription feed uses subscribed public videos');
+$db->exec("UPDATE videos SET privacy=0 WHERE id=1");
+check((new SubscriptionsProvider($db,$viewer))->getVideos()===[],'Private video excluded from subscriptions');
+$db->exec("INSERT INTO likes VALUES(99,'viewer',0,1)");
+check((new LikedVideosProvider($db,$viewer))->getVideos()===[],'Private liked video hidden from other users');
+$db->exec("DELETE FROM likes WHERE id=99; UPDATE videos SET privacy=1 WHERE id=1");
 $guestVideo = new Video($db,1,$guest);
 $guestComment = new Comment($db,['id'=>1],$guest,1);
 foreach ([$guestVideo, $guestComment] as $subject) {

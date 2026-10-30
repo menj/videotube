@@ -9,7 +9,6 @@ function likeVideo(button, videoId){
         disLikeButton.removeClass("active");
         
         let result = JSON.parse(data);
-         console.log(result);
         
         updateLikeValue(likeButton.find(".text"), result.likes)
         updateLikeValue(disLikeButton.find(".text"), result.disLikes)
@@ -37,7 +36,6 @@ function likeVideo(button, videoId){
             likeButton.removeClass("active");
             
             let result = JSON.parse(data);
-             console.log(result);
             
             updateLikeValue(likeButton.find(".text"), result.likes)
             updateLikeValue(disLikeButton.find(".text"), result.disLikes)
@@ -56,7 +54,3 @@ function likeVideo(button, videoId){
 
 
     
-    function updateLikeValue(element, num){
-        let likesCountVal = element.text() || 0;
-        element.text(parseInt(likesCountVal) + parseInt(num));
-    }
