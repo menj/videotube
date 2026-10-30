@@ -86,27 +86,27 @@
                 <form action="signUp.php" method="POST">
                    <!-- displaying error message if any -->
                    <?php 
-                     echo $account->getError(Constants::$firstNameCharacter);
+                     echo $account->getError(Constants::$firstNameCharacters);
                    ?>
                    <input type="text" name="firstName" placeholder="first name" autocomplete='off' value="<?php getInputValues('firstName') ?>" required>
 
                    
                    <!-- displaying error message if any -->
                    <?php 
-                     echo $account->getError(Constants::$lastNameCharacter);
+                     echo $account->getError(Constants::$lastNameCharacters);
                    ?>
                    <input type="text" name="lastName" placeholder="last name" autocomplete='off' value="<?php getInputValues('lastName') ?>" required>
 
                    <!-- displaying error message if any -->
                    <?php 
-                     echo $account->getError(Constants::$usernameCharacter);
+                     echo $account->getError(Constants::$usernameCharacters);
                      echo $account->getError(Constants::$usernameTaken); 
                    ?>
                    <input type="text" name="username" placeholder="User name" autocomplete='off' value="<?php getInputValues('username') ?>" required>
 
                    <!-- displaying error message if any -->
                    <?php 
-                     echo $account->getError(Constants::$emailDoNotMatch);
+                     echo $account->getError(Constants::$emailsDoNotMatch);
                      echo $account->getError(Constants::$emailTaken); 
                    ?>
                    <input type="email" name="email" placeholder="email" autocomplete='off' value="<?php getInputValues('email') ?>" required>

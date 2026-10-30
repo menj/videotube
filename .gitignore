@@ -2,3 +2,4 @@
 /includes/install.lock
 /uploads/
 /vendor/
+/includes/.install-*

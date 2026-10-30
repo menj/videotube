@@ -68,9 +68,9 @@ if(isset($_POST["savePasswordButton"])) {
         </div>
         <?php
             echo $formProvider->createUserDetailsForm(
-                isset($_POST["firstName"]) ? $_POST["firstName"] : $userLoggedInObj->getUserFirstName(),
-                isset($_POST["lastName"]) ? $_POST["lastName"] : $userLoggedInObj->getUserLastName(),
-                isset($_POST["email"]) ? $_POST["email"] : $userLoggedInObj->getUserEmail()
+                isset($_POST["firstName"]) ? inputText('firstName',$_POST) : $userLoggedInObj->getUserFirstName(),
+                isset($_POST["lastName"]) ? inputText('lastName',$_POST) : $userLoggedInObj->getUserLastName(),
+                isset($_POST["email"]) ? inputText('email',$_POST) : $userLoggedInObj->getUserEmail()
             );
         ?>
     </div>

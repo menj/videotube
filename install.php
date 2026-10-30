@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/includes/runtime.php';
 require __DIR__ . '/includes/Installer.php';
+require __DIR__ . '/includes/classes/MediaCommand.php';
 require __DIR__ . '/includes/security.php';
 applicationSecurity();
 $configPath = __DIR__ . '/includes/local.php';
@@ -39,6 +40,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $path = realpath($_POST[$binary]);
             if (!$path || !is_file($path) || !is_executable($path)) throw new RuntimeException('Provide an executable absolute path for ' . $binary . '.');
             $_POST[$binary] = $path;
+        }
+        foreach (['ffmpeg','ffprobe'] as $binary) {
+            $version = MediaCommand::run([$_POST[$binary], '-version'], 10);
+            if (!str_contains(strtolower($version), $binary . ' version')) throw new RuntimeException('The configured ' . $binary . ' executable did not identify itself.');
+        }
+        $encoders = MediaCommand::run([$_POST['ffmpeg'], '-hide_banner', '-encoders'], 10);
+        foreach (['libx264','aac','mjpeg'] as $codec) {
+            if (!preg_match('/\b' . $codec . '\b/', $encoders)) throw new RuntimeException('FFmpeg is missing encoder: ' . $codec);
         }
         $config = ['dsn'=>'mysql:host=' . $_POST['host'] . ';dbname=' . $_POST['database'] . ';charset=utf8mb4',
             'user'=>$_POST['dbuser'],'password'=>$_POST['dbpass'],'ffmpeg'=>$_POST['ffmpeg'],'ffprobe'=>$_POST['ffprobe']];
