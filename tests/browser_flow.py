@@ -1,5 +1,5 @@
 """Real HTTP installation, authorization and FFmpeg regression checks (disposable CI DB)."""
-import http.cookiejar, os, pathlib, re, shutil, subprocess, time, urllib.request, urllib.parse, urllib.error
+import json, http.cookiejar, os, pathlib, re, shutil, subprocess, time, urllib.request, urllib.parse, urllib.error
 root=pathlib.Path(__file__).resolve().parents[1]
 os.chdir(root)
 assert not (root/'includes/local.php').exists(), 'Run only in a disposable checkout'
@@ -47,14 +47,26 @@ try:
  guest=Client();assert 'Private fixture' not in guest.page('index.php')
  for path in ['watch.php?id=1','stream.php?id=1','thumbnail.php?id=1']: guest.request(path,expect=404)
  guest.post('ajax/likeVideo.php',{'videoId':1},expect=403)
+ other=Client();other.page('signUp.php')
+ other.post('signUp.php',dict(submitButton=1,firstName='Other',lastName='User',username='other',email='other@example.test',email2='other@example.test',password='other!Password123',password2='other!Password123'))
+ other.page('index.php');other.request('editVideo.php?videoId=1',expect=403)
+ other.request('stream.php?id=1',expect=404)
+ other.post('ajax/likeVideo.php',dict(videoId=1),expect=404)
  owner.page('editVideo.php?videoId=1');owner.post('editVideo.php?videoId=1',dict(title='Public fixture',description='<script>bad()</script>',privacy=1,category=16))
  assert 'Public fixture' in guest.page('search.php?term=Public')
  assert '<script>bad()</script>' not in guest.page('watch.php?id=1')
  owner.post('ajax/postComment.php',dict(videoId=1,postedBy='impersonated',responseTo=0,commentText='<script>comment()</script>'))
  body=guest.page('watch.php?id=1');assert '<script>comment()</script>' not in body and '&lt;script&gt;comment()' in body
+ assert json.loads(owner.post('ajax/disLikeVideo.php',dict(videoId=1)))['disLikes']==1
+ assert json.loads(owner.post('ajax/disLikeVideo.php',dict(videoId=1)))['disLikes']==-1
  owner.post('ajax/likeComment.php',dict(videoId=1,commentId=1))
  owner.post('ajax/disLikeComment.php',dict(videoId=1,commentId=1))
  owner.post('ajax/getCommentReplies.php',dict(videoId=1,commentId=999),expect=404)
+ owner.post('ajax/subscribe.php',dict(userTo='other',userFrom='impersonated'))
+ owner.post('ajax/subscribe.php',dict(userTo='owner',userFrom='other'),expect=422)
+ owner.page('settings.php')
+ assert b'Details updated successfully' in owner.post('settings.php',dict(saveDetailsButton=1,firstName='Site',lastName='Owner',email='owner@example.test'))
+ assert b'Password updated successfully' in owner.post('settings.php',dict(savePasswordButton=1,oldPassword=fields['password'],newPassword='changed!Password123',newPassword2='changed!Password123'))
  owner.page('logout.php');owner.post('logout.php',{})
  owner.page('index.php');owner.post('ajax/likeVideo.php',dict(videoId=1),expect=403)
  print('HTTP installation, CSRF, login/logout, upload, edit, privacy, ranges, comments and votes passed.')

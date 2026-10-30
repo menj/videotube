@@ -14,7 +14,7 @@ Apache 2.4: enable mod_rewrite and allow the supplied `.htaccess` rules (`AllowO
 
 Nginx: apply `deploy/nginx.conf.example` inside the server block before generic PHP handling. Configure PHP-FPM and TLS for your host. PHP's development server is for testing only and does not enforce `.htaccess`.
 
-The application rejects plain HTTP except loopback. Behind a TLS-terminating reverse proxy, set `VIDEOTUBE_HTTPS=1` only in a backend environment that is inaccessible directly and whose proxy enforces HTTPS. Client-supplied forwarded headers are deliberately not trusted.
+The application rejects plain HTTP except loopback requests to PHP's development server. Behind a TLS-terminating reverse proxy, set `VIDEOTUBE_HTTPS=1` only in a backend environment that is inaccessible directly and whose proxy enforces HTTPS. Client-supplied forwarded headers are deliberately not trusted.
 
 Set PHP `upload_max_filesize=50M`, `post_max_size=52M`, `max_execution_time=180` and matching web-server/FPM timeouts. The application accepts files up to 50,000,000 bytes and videos up to four hours; conversion has a 120-second deadline and is intended for small videos. Large/slow conversions fail cleanly. A worker queue is needed for a large video service. Restrict network and filesystem access for the PHP/FFmpeg service account, keep FFmpeg patched, and set disk/CPU/process quotas.
 

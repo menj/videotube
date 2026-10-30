@@ -202,7 +202,7 @@ class Video {
 
             $result = array(
                 "likes" => 0 - $count,
-                "disLikes" => -1
+                "disLikes" => 1
             );
             return json_encode($result);
         }

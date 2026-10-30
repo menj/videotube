@@ -39,4 +39,5 @@ require_once __DIR__ . '/../includes/ajax.php';
        echo "one or more parameter is not passed to subscribe.php";
    }
 
+if ($conn->inTransaction()) $conn->commit();
 ?>

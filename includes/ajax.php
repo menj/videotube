@@ -16,3 +16,10 @@ if (isset($_POST['videoId'])) {
         if (!$q->fetchColumn()) { http_response_code(404); exit; }
     }
 } elseif (basename($_SERVER['SCRIPT_FILENAME']) !== 'subscribe.php') { http_response_code(400); exit; }
+
+// Serialize account mutations across sessions; endpoint commits after completing its writes.
+if (basename($_SERVER['SCRIPT_FILENAME']) !== 'getCommentReplies.php') {
+    $conn->beginTransaction();
+    $q=$conn->prepare('SELECT id FROM users WHERE username=? FOR UPDATE');
+    $q->execute([requireLogin()]);
+}

@@ -2,7 +2,7 @@
 function h($value): string { return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function inputText(string $key, array $source): string { return is_string($source[$key] ?? null) ? $source[$key] : ''; }
 function secureTransport(): bool { return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || getenv('VIDEOTUBE_HTTPS') === '1'; }
-function localRequest(): bool { return in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1','::1'],true); }
+function localRequest(): bool { return PHP_SAPI === 'cli-server' && in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1','::1'],true); }
 function csrfToken(): string { return $_SESSION['csrf'] ??= bin2hex(random_bytes(32)); }
 function requireLogin(): string {
     $user = $_SESSION['userLoggedIn'] ?? '';

@@ -12,4 +12,5 @@ require_once __DIR__ . '/../includes/ajax.php';
 
         $video = new Video($conn, $videoId, $userLoggedInObj);
         echo $video->disLike();
+if ($conn->inTransaction()) $conn->commit();
 ?>

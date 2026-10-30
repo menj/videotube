@@ -46,6 +46,8 @@ final class VideoProcessor {
             MediaCommand::run([$ffmpeg, '-nostdin', '-v', 'error', '-protocol_whitelist', 'file,pipe', '-i', $source,
                 '-map', '0:v:0', '-map', '0:a:0?', '-c:v', 'libx264', '-preset', 'veryfast', '-threads', '2',
                 '-vf', 'scale=w=1280:h=720:force_original_aspect_ratio=decrease:force_divisible_by=2', '-fs', '100000000', '-c:a', 'aac', '-movflags', '+faststart', '-y', $output]);
+            $converted = json_decode(MediaCommand::run([$ffprobe, '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', $output], 20), true, 512, JSON_THROW_ON_ERROR);
+            if (abs((float)($converted['format']['duration'] ?? 0) - $duration) > 2 || filesize($output) >= 100000000) throw new RuntimeException('Converted video exceeded output limits.');
             $thumbRelative = 'uploads/videos/thumbnails/' . bin2hex(random_bytes(16)) . '.jpg';
             $thumb = $root . '/' . $thumbRelative; $files[] = $thumb;
             MediaCommand::run([$ffmpeg, '-nostdin', '-v', 'error', '-ss', (string)($duration / 2), '-i', $output,

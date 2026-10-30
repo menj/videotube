@@ -13,4 +13,5 @@ require_once __DIR__ . '/../includes/ajax.php';
 
         $comment = new Comment($conn, $commentId, $userLoggedInObj, $videoId);
         echo $comment->disLike();
+if ($conn->inTransaction()) $conn->commit();
 ?>
