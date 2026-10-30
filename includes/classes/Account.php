@@ -9,23 +9,15 @@ class Account {
     }
 
     public function login($un, $pw) {
-        $pw = hash("sha512", $pw);
-
-        $query = $this->conn->prepare("SELECT * FROM users WHERE username=:un AND password=:pw");
-        $query->bindParam(":un", $un);
-        $query->bindParam(":pw", $pw);
-
-        $query->execute();
-
-        if($query->rowCount() == 1) {
-            return true;
-        }
-        else {
-            array_push($this->errorArray, Constants::$UserLoginFailed);
-            return false;
-        }
+        $query = $this->conn->prepare('SELECT password FROM users WHERE username=?');
+        $query->execute([$un]);
+        $stored = $query->fetchColumn();
+        if (is_string($stored) && (password_verify($pw,$stored)
+            || (preg_match('/^[a-f0-9]{128}$/D',$stored) && hash_equals($stored,hash('sha512',$pw))))) return true;
+        $this->errorArray[] = Constants::$UserLoginFailed;
+        return false;
     }
-    
+
     public function register($fn, $ln, $un, $em, $em2, $pw, $pw2) {
         $this->validateFirstName($fn);
         $this->validateLastName($ln);
@@ -66,7 +58,7 @@ class Account {
 
         if(empty($this->errorArray)) {
             $query = $this->conn->prepare("UPDATE users SET password=:pw WHERE username=:un");
-            $pw = hash("sha512", $pw);
+            $pw = password_hash($pw, PASSWORD_DEFAULT);
             $query->bindParam(":pw", $pw);
             $query->bindParam(":un", $un);
 
@@ -78,22 +70,18 @@ class Account {
     }
 
     private function validateOldPassword($oldPw, $un) {
-        $pw = hash("sha512", $oldPw);
-
-        $query = $this->conn->prepare("SELECT * FROM users WHERE username=:un AND password=:pw");
-        $query->bindParam(":un", $un);
-        $query->bindParam(":pw", $pw);
-
-        $query->execute();
-
-        if($query->rowCount() == 0) {
-            array_push($this->errorArray, Constants::$passwordIncorrect);
+        $query = $this->conn->prepare('SELECT password FROM users WHERE username=?');
+        $query->execute([$un]);
+        $stored = $query->fetchColumn();
+        if (!is_string($stored) || !(password_verify($oldPw,$stored)
+            || (preg_match('/^[a-f0-9]{128}$/D',$stored) && hash_equals($stored,hash('sha512',$oldPw))))) {
+            $this->errorArray[] = Constants::$passwordIncorrect;
         }
     }
 
     public function insertUserDetails($fn, $ln, $un, $em, $pw) {
         
-        $pw = hash("sha512", $pw);
+        $pw = password_hash($pw, PASSWORD_DEFAULT);
         $profilePic = "assets/images/profilePictures/default.png";
 
         $query = $this->conn->prepare("INSERT INTO users (firstName, lastName, username, email, password, profilePic)

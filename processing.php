@@ -14,8 +14,8 @@
                                     $_FILES["fileInput"], 
                                     $_POST["titleInput"],
                                     $_POST["descriptionInput"],
-                                    $_POST["privacyInput"],
                                     $_POST["categoryInput"],
+                                    $_POST["privacyInput"],
                                     $userLoggedInObj->getUsername()  
                                 );
 

@@ -38,3 +38,25 @@ jobs:
         run: |
           output=$(php -r 'require "includes/config.php"; echo "BOOTSTRAP_CONTINUED";')
           test "$output" = "VideoTube requires PHP 8.4 or newer."
+  installation:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: videotube_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -ptest"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql
+          coverage: none
+      - run: php tests/install.php

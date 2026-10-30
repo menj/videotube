@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../media.php";
 class VideoProcessor {
 
     private $conn;
@@ -8,8 +9,8 @@ class VideoProcessor {
     private $ffprobePath;
     public function __construct($conn) {
         $this->conn = $conn;
-        $this->ffmpegPath=realpath("ffmpeg/windows/ffmpeg.exe");
-        $this->ffprobePath= realpath("ffmpeg/windows/ffprobe.exe");
+        $this->ffmpegPath=mediaBinary("ffmpeg");
+        $this->ffprobePath= mediaBinary("ffprobe");
     }
 
     public function upload($videoUploadData) {
@@ -17,7 +18,7 @@ class VideoProcessor {
         $targetDir = "uploads/videos/";
         $videoData = $videoUploadData->videoDataArray;
         
-        $tempFilePath = $targetDir . uniqid() . basename($videoData["name"]);
+        $tempFilePath = $targetDir . bin2hex(random_bytes(16)) . "." . strtolower(pathinfo($videoData["name"], PATHINFO_EXTENSION));
         //uploads/videos/5aa3e9343c9ffdogs_playing.flv
 
         $tempFilePath = str_replace(" ", "_", $tempFilePath);
@@ -57,7 +58,8 @@ class VideoProcessor {
         $videoType = pathinfo($filePath,PATHINFO_EXTENSION);
 
         if(!$this->isValidSize($data)){
-          echo "File is too large. Can't be more than ".$this->sizeLimit."bytes";
+          echo "File exceeds 50 MB.";
+          return false;
         }  
         else if(!$this->isValidType($videoType)) {
             echo "Invalid file type";
@@ -133,7 +135,9 @@ class VideoProcessor {
             $interval = ($duration * 0.8) / $numThumbnails * $num;
             $fullThumbnailPath = "$pathToThumbnail/$videoId-$imageName";
 
-            $cmd = "$this->ffmpegPath -i $filePath -ss $interval -s $thumbnailSize -vframes 1 $fullThumbnailPath 2>&1";
+            $cmd = escapeshellarg($this->ffmpegPath) . ' -nostdin -protocol_whitelist file,pipe -i ' . escapeshellarg($filePath)
+                . ' -ss ' . escapeshellarg((string)$interval) . ' -s ' . escapeshellarg($thumbnailSize)
+                . ' -vframes 1 ' . escapeshellarg($fullThumbnailPath) . ' 2>&1';
 
             $outputLog = array();
             exec($cmd, $outputLog, $returnCode);
@@ -167,7 +171,7 @@ class VideoProcessor {
     }
 
     private function getVideoDuration($filePath) {
-        return (int)shell_exec("$this->ffprobePath -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $filePath");
+        return (int)shell_exec(escapeshellarg($this->ffprobePath) . ' -v error -protocol_whitelist file,pipe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ' . escapeshellarg($filePath));
     }
 
     private function upadateDuration($duration, $videoId){

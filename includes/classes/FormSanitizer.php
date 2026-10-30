@@ -25,8 +25,6 @@
 }
 
     public static function sanitizingFormPassword($inputString){
-      $inputString  = strip_tags($inputString);
-
       return $inputString;
     }
 
