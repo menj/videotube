@@ -32,9 +32,6 @@
         header("Location: account.php");
        exit;
      }
-     else{
-       echo "login failed";
-     }
   }
 
      function getInputValues($name){
@@ -64,7 +61,7 @@
 
     <!-- Jquery CDN-->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net</br>pm/popper.js@1.16.0/dist/umd/popper.min.js"
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
         integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous">
     </script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
@@ -106,6 +103,7 @@
                    <!-- displaying error message if any -->
                    <?php 
                      echo $account->getError(Constants::$emailsDoNotMatch);
+                     echo $account->getError(Constants::$emailInvalid);
                      echo $account->getError(Constants::$emailTaken); 
                    ?>
                    <input type="email" name="email" placeholder="email" autocomplete='off' value="<?php getInputValues('email') ?>" required>
@@ -114,7 +112,6 @@
                     <!-- displaying error message if any -->
                     <?php 
                      echo $account->getError(Constants::$passwordDoNotMatch);
-                     echo $account->getError(Constants::$passwordNotAlphaNumeric); 
                      echo $account->getError(Constants::$passwordLength); 
                    ?>
                    <input type="password" name="password" placeholder="password" autocomplete='off' required>

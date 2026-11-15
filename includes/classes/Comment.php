@@ -113,6 +113,12 @@
        public function getVideoId(){
            return $this->videoId;
        }
+
+       /** Replies are one level deep: a reply to a reply joins the same thread. */
+       public function getThreadId(): int {
+           $parent = (int)($this->sqlData["responseTo"] ?? 0);
+           return $parent > 0 ? $parent : (int)$this->sqlData["id"];
+       }
        
        public function wasLiked(){
         $id = $this->getId();

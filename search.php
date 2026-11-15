@@ -4,6 +4,7 @@
 
     if(!isset($_GET["term"]) || $_GET["term"] == "") {
         echo "You must enter a search term";
+        require_once("includes/footer.php");
         exit();
     }
 

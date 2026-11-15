@@ -17,3 +17,4 @@ $videoGrid = new VideoGrid($conn, $userLoggedInObj);
     }
     ?>
 </div>
+<?php require_once("includes/footer.php"); ?>

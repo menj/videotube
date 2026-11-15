@@ -32,6 +32,11 @@ function applicationSecurity(): void {
     if (secureTransport()) header('Strict-Transport-Security: max-age=31536000');
     if (session_status() !== PHP_SESSION_ACTIVE) session_start(['use_strict_mode'=>true,'cookie_httponly'=>true,'cookie_secure'=>secureTransport(),'cookie_samesite'=>'Lax']);
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // PHP discards $_POST and $_FILES when the body exceeds post_max_size.
+        $limit = ini_parse_quantity((string)ini_get('post_max_size'));
+        if ($limit > 0 && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > $limit && !$_POST && !$_FILES) {
+            http_response_code(413); exit('The upload is larger than this server accepts. Choose a file of up to 50 MB.');
+        }
         $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf'] ?? '');
         if (!is_string($token) || !hash_equals(csrfToken(),$token)) { http_response_code(403); exit('Invalid session token. Reload and try again.'); }
     }

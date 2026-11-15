@@ -16,7 +16,16 @@ function postComment(button, postedBy, videoId, replyTo, containerClass) {
                     $("." + containerClass).prepend(comment);
                 }
                 else {
-                    $(button).parent().siblings("." + containerClass).append(comment);
+                    // A reply written under another reply belongs to the enclosing thread.
+                    let item = $(button).closest(".itemContainer");
+                    let thread = item.parent().closest("." + containerClass);
+                    let target = thread.length ? thread : item.children("." + containerClass);
+                    if (target.hasClass("viewReplies")) {
+                        target.click(); // Collapsed thread: load it, including the new reply.
+                    } else {
+                        target.append(comment);
+                    }
+                    item.find(".commentForm").first().addClass("hidden");
                 }
             }).always(function () { $(button).prop("disabled", false); });
     } else {

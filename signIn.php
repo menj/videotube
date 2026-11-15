@@ -17,9 +17,6 @@
        header("Location: index.php");
        exit;
     }
-    else{
-       echo "Login failed";
-    }
   
 
   }

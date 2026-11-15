@@ -44,7 +44,7 @@
     private function createReplySection() {
         $postedBy = $this->userLoggedInObj->getUsername();
         $videoId = $this->comment->getVideoId();
-        $commentId = $this->comment->getId();
+        $commentId = $this->comment->getThreadId();
 
         $profileButton = ButtonProvider::createProfileButton($this->conn, $postedBy);
         

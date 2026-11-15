@@ -12,6 +12,8 @@ if ($dsn === false && empty($local['dsn'])) {
 $conn = new PDO($dsn !== false ? $dsn : $local['dsn'], $user !== false ? $user : ($local['user'] ?? ''),
     $password !== false ? $password : ($local['password'] ?? ''),
     [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES=>false]);
+// PHP runs in UTC; keep CURRENT_TIMESTAMP/NOW() on the same clock so relative times are correct.
+if ($conn->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') $conn->exec("SET time_zone = '+00:00'");
 if (PHP_SAPI !== 'cli' && !empty($_SESSION['userLoggedIn'])) {
     $q=$conn->prepare('SELECT password,suspended,sessionVersion FROM users WHERE username=?'); $q->execute([$_SESSION['userLoggedIn']]);
     $accountState=$q->fetch(PDO::FETCH_ASSOC); $stored=$accountState['password'] ?? null;

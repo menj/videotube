@@ -2,6 +2,7 @@
  
  if(!isset($_SESSION["userLoggedIn"])){
      header("Location: signIn.php");
+     exit;
  }
 
 ?>
