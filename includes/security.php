@@ -3,6 +3,22 @@ function h($value): string { return htmlspecialchars((string)$value, ENT_QUOTES 
 function inputText(string $key, array $source): string { return is_string($source[$key] ?? null) ? $source[$key] : ''; }
 function secureTransport(): bool { return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || getenv('VIDEOTUBE_HTTPS') === '1'; }
 function localRequest(): bool { return PHP_SAPI === 'cli-server' && in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1','::1'],true); }
+/**
+ * Address used for rate limiting. Forwarded headers are honoured only when the request comes
+ * from a proxy listed in VIDEOTUBE_TRUSTED_PROXIES (comma-separated addresses).
+ */
+function clientAddress(): string {
+    $remote = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    $trusted = array_filter(array_map('trim', explode(',', (string)getenv('VIDEOTUBE_TRUSTED_PROXIES'))));
+    if (!$trusted || !in_array($remote, $trusted, true)) return $remote;
+    // Read right to left: the first hop that is not one of our proxies is the client.
+    $hops = array_map('trim', explode(',', (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '')));
+    for ($i = count($hops) - 1; $i >= 0; $i--) {
+        if (!filter_var($hops[$i], FILTER_VALIDATE_IP)) break;
+        if (!in_array($hops[$i], $trusted, true)) return $hops[$i];
+    }
+    return $remote;
+}
 function csrfToken(): string { return $_SESSION['csrf'] ??= bin2hex(random_bytes(32)); }
 function requireLogin(): string {
     $user = $_SESSION['userLoggedIn'] ?? '';

@@ -12,6 +12,8 @@
        public static $passwordLength = "Use a password of 12 to 72 bytes.";
        public static $UserLoginFailed = "Username or password is incorrect!";
        public static $passwordIncorrect  = "Password is incorrect!";
+       public static $loginThrottled = "Too many failed sign-in attempts for this account. Wait 15 minutes or reset your password.";
+       public static $passwordRequiredForEmail = "Enter your current password to change your email address.";
     
    }
 ?>

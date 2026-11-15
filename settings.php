@@ -21,9 +21,23 @@ if(isset($_POST["saveDetailsButton"])) {
     $lastName = FormSanitizer::sanitizingFormString(inputText('lastName',$_POST));
     $email = FormSanitizer::sanitizingFormEmail(inputText('email',$_POST));
 
-    if($account->updateDetails($firstName, $lastName, $email, $userLoggedInObj->getusername())) {
+    $username = $userLoggedInObj->getUsername();
+    $previousEmail = $account->emailChange($email, $username);
+    $currentPassword = FormSanitizer::sanitizingFormPassword(inputText('currentPassword',$_POST));
+
+    if($account->updateDetails($firstName, $lastName, $email, $username, $currentPassword)) {
+        $note = "";
+        if ($previousEmail !== null) {
+            // Best effort: the change is saved even when mail is not configured yet.
+            $recovery = new AccountRecovery($conn);
+            try { $recovery->notifyEmailChanged($previousEmail, $username); }
+            catch (Throwable $e) { error_log('Account mail: ' . $e->getMessage()); }
+            try { $recovery->issue($email, 'verify'); }
+            catch (Throwable $e) { error_log('Account mail: ' . $e->getMessage()); }
+            $note = " A verification link was sent to your new address.";
+        }
         $detailsMessage = "<div class='alert alert-success'>
-                                <strong>SUCCESS!</strong> Details updated successfully!
+                                <strong>SUCCESS!</strong> Details updated successfully!$note
                             </div>";
     }
     else {

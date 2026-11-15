@@ -2,6 +2,8 @@
    
     class VideoUploadData {
         public ?int $jobId = null;
+        /** Unguessable base name for the stored media files. */
+        public ?string $mediaName = null;
         public $videoDataArray,$title,$description,$categories,$privacy,$uploadedBy;
         //constructor
         public function __construct($videoDataArray,$title,$description,$categories,$privacy,$uploadedBy){

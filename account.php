@@ -1,8 +1,7 @@
 <?php
 require __DIR__.'/includes/config.php';
-require __DIR__.'/includes/AccountRecovery.php';
 header('Referrer-Policy: no-referrer');
-$service=new AccountRecovery($conn);$message='';
+$service=new AccountRecovery($conn);$message=isset($_GET['sent'])?'We sent a verification link to your email address. Open it to finish setting up your account.':'';
 $token=inputText('token',$_POST) ?: inputText('token',$_GET);
 $purpose=inputText('purpose',$_POST) ?: inputText('purpose',$_GET);
 if ($_SERVER['REQUEST_METHOD']==='POST') {

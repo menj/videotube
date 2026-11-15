@@ -1,7 +1,6 @@
 <?php
 require __DIR__ . '/includes/runtime.php';
-require __DIR__ . '/includes/Installer.php';
-require __DIR__ . '/includes/classes/MediaCommand.php';
+require __DIR__ . '/includes/autoload.php';
 require __DIR__ . '/includes/security.php';
 applicationSecurity();
 $configPath = __DIR__ . '/includes/local.php';
@@ -30,9 +29,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new RuntimeException('Invalid database host or name. Use a hostname/IP without a port.');
         }
         if (!is_writable(__DIR__ . '/includes')) throw new RuntimeException('The includes directory must be writable during setup.');
-        foreach (['uploads/videos','uploads/videos/thumbnails'] as $directory) {
-            if (!is_dir(__DIR__ . '/' . $directory) && !mkdir(__DIR__ . '/' . $directory,0750,true)) throw new RuntimeException('Cannot create upload directories.');
-            if (!is_writable(__DIR__ . '/' . $directory)) throw new RuntimeException('Upload directories must be writable.');
+        // Media can live outside the web root; blank keeps the bundled uploads/ directory.
+        $storage = is_string($_POST['storage'] ?? null) ? trim($_POST['storage']) : '';
+        if ($storage !== '') {
+            $storage = realpath($storage);
+            if (!$storage || !is_dir($storage) || !str_starts_with($storage, '/')) throw new RuntimeException('The media storage directory must be an existing absolute path.');
+            if ($storage === __DIR__ || str_starts_with($storage, __DIR__ . DIRECTORY_SEPARATOR)) throw new RuntimeException('Choose a media storage directory outside the application directory, or leave it blank.');
+        }
+        $storageBase = $storage !== '' ? $storage : __DIR__ . '/uploads';
+        foreach (['videos','videos/thumbnails','queue','avatars'] as $directory) {
+            if (!is_dir($storageBase . '/' . $directory) && !mkdir($storageBase . '/' . $directory,0750,true)) throw new RuntimeException('Cannot create upload directories.');
+            if (!is_writable($storageBase . '/' . $directory)) throw new RuntimeException('Upload directories must be writable.');
         }
         if (!function_exists('proc_open')) throw new RuntimeException('Your host must enable proc_open for video processing.');
         foreach (['ffmpeg','ffprobe'] as $binary) {
@@ -51,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $config = ['dsn'=>'mysql:host=' . $_POST['host'] . ';dbname=' . $_POST['database'] . ';charset=utf8mb4',
             'user'=>$_POST['dbuser'],'password'=>$_POST['dbpass'],'ffmpeg'=>$_POST['ffmpeg'],'ffprobe'=>$_POST['ffprobe']];
+        if ($storage !== '') $config['storage'] = $storage;
         $db = new PDO($config['dsn'],$config['user'],$config['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
         $staged = Installer::stageConfig($configPath, $config);
         Installer::install($db,['username'=>$_POST['username'],'email'=>$_POST['email'],'password'=>$_POST['password']],file_get_contents(__DIR__ . '/database/schema.sql'), function() use ($staged, $configPath) {
@@ -74,6 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <p>This creates your administrator account.</p>
 <?php if ($error): ?><p role="alert"><?= e($error) ?></p><?php endif; ?>
 <form method="post">
-<?php foreach (['token'=>'Installation token','host'=>'Database host','database'=>'Database name','dbuser'=>'Database username','dbpass'=>'Database password','username'=>'Your username','email'=>'Your email','password'=>'Your password (12–72 bytes)','ffmpeg'=>'Absolute path to FFmpeg','ffprobe'=>'Absolute path to FFprobe'] as $field=>$label): ?>
-<label><?= e($label) ?><input name="<?= e($field) ?>" type="<?= in_array($field,['token','password','dbpass'],true)?'password':($field==='email'?'email':'text') ?>" <?= $field==='dbpass'?'':'required' ?> autocomplete="off"></label>
+<?php foreach (['token'=>'Installation token','host'=>'Database host','database'=>'Database name','dbuser'=>'Database username','dbpass'=>'Database password','username'=>'Your username','email'=>'Your email','password'=>'Your password (12–72 bytes)','ffmpeg'=>'Absolute path to FFmpeg','ffprobe'=>'Absolute path to FFprobe','storage'=>'Media storage directory outside the web root (optional)'] as $field=>$label): ?>
+<label><?= e($label) ?><input name="<?= e($field) ?>" type="<?= in_array($field,['token','password','dbpass'],true)?'password':($field==='email'?'email':'text') ?>" <?= in_array($field,['dbpass','storage'],true)?'':'required' ?> autocomplete="off"></label>
 <?php endforeach; ?><button>Install VideoTube</button></form><?php endif; ?></html>

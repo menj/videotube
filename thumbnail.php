@@ -14,9 +14,8 @@ if ($thumbId && ($video->getVideoUploadedBy() === ($_SESSION['userLoggedIn'] ?? 
     $query->execute([$id]);
 }
 $relative = $query->fetchColumn();
-$root = realpath(__DIR__ . '/uploads/videos/thumbnails');
-$path = is_string($relative) ? realpath(__DIR__ . '/' . $relative) : false;
-if (!$root || !$path || !str_starts_with($path, $root . DIRECTORY_SEPARATOR) || !is_file($path)) { http_response_code(404); exit; }
+$path = storedFile(is_string($relative) ? $relative : null, 'videos/thumbnails');
+if ($path === null) { http_response_code(404); exit; }
 header('Content-Type: image/jpeg'); header('X-Content-Type-Options: nosniff'); header('Cache-Control: private, no-store');
 header('Content-Length: ' . filesize($path));
 if (session_status() === PHP_SESSION_ACTIVE) session_write_close();

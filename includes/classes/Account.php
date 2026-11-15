@@ -39,10 +39,22 @@ class Account {
         }
     }
 
-    public function updateDetails($fn, $ln, $em, $un) {
+    /** @return string|null the previous address when the email changed, otherwise null */
+    public function emailChange($em, $un): ?string {
+        $query = $this->conn->prepare('SELECT email FROM users WHERE username=?');
+        $query->execute([$un]);
+        $current = $query->fetchColumn();
+        return is_string($current) && $current !== $em ? $current : null;
+    }
+
+    public function updateDetails($fn, $ln, $em, $un, $currentPassword = '') {
         $this->validateFirstName($fn);
         $this->validateLastName($ln);
         $this->validateNewEmail($em, $un);
+        // Changing where recovery links go is as sensitive as changing the password.
+        if ($this->emailChange($em, $un) !== null && !$this->passwordMatches($currentPassword, $un)) {
+            $this->errorArray[] = Constants::$passwordRequiredForEmail;
+        }
 
         if(empty($this->errorArray)) {
             $query = $this->conn->prepare("UPDATE users SET firstName=:fn, lastName=:ln, emailVerifiedAt=IF(BINARY email=BINARY :checkEmail,emailVerifiedAt,NULL), email=:em WHERE username=:un");
@@ -76,12 +88,16 @@ class Account {
         }
     }
 
-    private function validateOldPassword($oldPw, $un) {
+    public function passwordMatches($password, $un): bool {
         $query = $this->conn->prepare('SELECT password FROM users WHERE username=? AND suspended=0');
         $query->execute([$un]);
         $stored = $query->fetchColumn();
-        if (!is_string($stored) || !(password_verify($oldPw,$stored)
-            || (preg_match('/^[a-f0-9]{128}$/D',$stored) && hash_equals($stored,hash('sha512',$oldPw))))) {
+        return is_string($stored) && (password_verify($password,$stored)
+            || (preg_match('/^[a-f0-9]{128}$/D',$stored) && hash_equals($stored,hash('sha512',$password))));
+    }
+
+    private function validateOldPassword($oldPw, $un) {
+        if (!$this->passwordMatches($oldPw, $un)) {
             $this->errorArray[] = Constants::$passwordIncorrect;
         }
     }

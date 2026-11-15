@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/MediaCommand.php';
 require_once __DIR__ . '/../media.php';
 final class VideoProcessor {
     private PDO $conn;
@@ -27,12 +26,13 @@ final class VideoProcessor {
             $query = $this->conn->prepare('SELECT id FROM categories WHERE id=?');
             $query->execute([$data->categories]);
             if (!$query->fetchColumn()) throw new InvalidArgumentException('Invalid topic.');
-            $root = dirname(__DIR__, 2);
-            $relative = 'uploads/videos/' . ($queued ? 'job-'.$data->jobId : bin2hex(random_bytes(16)));
-            if (!is_dir($root . '/uploads/videos/thumbnails')
-                && !mkdir($root . '/uploads/videos/thumbnails', 0750, true)
-                && !is_dir($root . '/uploads/videos/thumbnails')) throw new RuntimeException('Cannot create upload directory.');
-            $source = $root . '/' . $relative . '.source'; $files[] = $source;
+            // Stored paths keep the historical "uploads/" prefix; storedFile() maps it onto the storage root.
+            // The name is unguessable, and stable per job so a resumed job overwrites its own partial files.
+            $name = is_string($data->mediaName) && preg_match('/^[a-f0-9]{32,64}$/D', $data->mediaName) ? $data->mediaName : bin2hex(random_bytes(24));
+            $relative = 'uploads/videos/' . $name;
+            storageDirectory('videos/thumbnails');
+            $toPath = static fn(string $stored): string => storageRoot() . '/' . substr($stored, strlen('uploads/'));
+            $source = $toPath($relative . '.source'); $files[] = $source;
             if (!($queued ? copy($upload['tmp_name'], $source) : move_uploaded_file($upload['tmp_name'], $source))) throw new RuntimeException('Cannot store upload.');
             $ffprobe = mediaBinary('ffprobe');
             $ffmpeg = mediaBinary('ffmpeg');
@@ -43,14 +43,14 @@ final class VideoProcessor {
             $duration = (float)($metadata['format']['duration'] ?? 0);
             if (($metadata['streams'][0]['codec_type'] ?? '') !== 'video' || !is_finite($duration)
                 || $duration <= 0 || $duration > 14400) throw new InvalidArgumentException('Invalid video duration.');
-            $output = $root . '/' . $relative . '.mp4'; $files[] = $output;
+            $output = $toPath($relative . '.mp4'); $files[] = $output;
             MediaCommand::run([$ffmpeg, '-nostdin', '-v', 'error', '-protocol_whitelist', 'file,pipe', '-i', $source,
                 '-map', '0:v:0', '-map', '0:a:0?', '-c:v', 'libx264', '-preset', 'veryfast', '-threads', '2',
                 '-vf', 'scale=w=1280:h=720:force_original_aspect_ratio=decrease:force_divisible_by=2', '-fs', '100000000', '-c:a', 'aac', '-movflags', '+faststart', '-y', $output]);
             $converted = json_decode(MediaCommand::run([$ffprobe, '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', $output], 20), true, 512, JSON_THROW_ON_ERROR);
             if (abs((float)($converted['format']['duration'] ?? 0) - $duration) > 2 || filesize($output) >= 100000000) throw new RuntimeException('Converted video exceeded output limits.');
-            $thumbRelative = 'uploads/videos/thumbnails/' . ($queued ? 'job-'.$data->jobId : bin2hex(random_bytes(16))) . '.jpg';
-            $thumb = $root . '/' . $thumbRelative; $files[] = $thumb;
+            $thumbRelative = 'uploads/videos/thumbnails/' . $name . '.jpg';
+            $thumb = $toPath($thumbRelative); $files[] = $thumb;
             MediaCommand::run([$ffmpeg, '-nostdin', '-v', 'error', '-ss', (string)($duration / 2), '-i', $output,
                 '-frames:v', '1', '-vf', 'scale=320:-2', '-threads', '1', '-y', $thumb], 20);
             if (!is_file($output) || !filesize($output) || !is_file($thumb) || !filesize($thumb)) throw new RuntimeException('Incomplete media.');

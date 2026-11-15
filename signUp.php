@@ -29,7 +29,9 @@
       
      if($wasSuccessful){
         startAuthenticatedSession($conn, $username);
-        header("Location: account.php");
+        try { (new AccountRecovery($conn))->issue($email, 'verify'); }
+        catch (Throwable $e) { error_log('Account mail: ' . $e->getMessage()); }
+        header("Location: account.php?sent=1");
        exit;
      }
   }

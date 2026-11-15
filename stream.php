@@ -8,10 +8,8 @@ if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)) {
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 try { $video = new Video($conn,$id ?: 0,null); } catch (OutOfBoundsException $e) { http_response_code(404); exit; }
 if (!$video->canView($_SESSION['userLoggedIn'] ?? '')) { http_response_code(404); exit; }
-$root = realpath(__DIR__ . '/uploads/videos');
-$path = realpath(__DIR__ . '/' . $video->getVideoFilePath());
-if (!$root || !$path || !str_starts_with($path, $root . DIRECTORY_SEPARATOR)
-    || !is_file($path) || !is_readable($path)) { http_response_code(404); exit; }
+$path = storedFile($video->getVideoFilePath(), 'videos');
+if ($path === null) { http_response_code(404); exit; }
 $size = filesize($path);
 header('Accept-Ranges: bytes');
 header('Content-Type: video/mp4');

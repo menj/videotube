@@ -5,14 +5,14 @@ os.chdir(root)
 assert not (root/'includes/local.php').exists(), 'Run only in a disposable checkout'
 subprocess.run(['php','-r', '$db=new PDO("mysql:host=127.0.0.1","root","test"); $db->exec("CREATE DATABASE videotube_http CHARACTER SET utf8mb4");'],check=True)
 outbox=pathlib.Path('/tmp/videotube-mail');outbox.mkdir(exist_ok=True)
-env=dict(os.environ,VIDEOTUBE_INSTALL_TOKEN='ci-only-install-token-01234567890123456789',VIDEOTUBE_ENV='test',VIDEOTUBE_BASE_URL='http://127.0.0.1:8089',VIDEOTUBE_TEST_MAIL_DIR=str(outbox))
+media=pathlib.Path('/tmp/videotube-media');media.mkdir(exist_ok=True)
+env=dict(os.environ,VIDEOTUBE_INSTALL_TOKEN='ci-only-install-token-01234567890123456789',VIDEOTUBE_ENV='test',VIDEOTUBE_BASE_URL='http://127.0.0.1:8089',VIDEOTUBE_TEST_MAIL_DIR=str(outbox),VIDEOTUBE_TRUSTED_PROXIES='127.0.0.1')
 def mail_link(purpose,email):
  messages=[json.loads(p.read_text()) for p in sorted(outbox.glob('*.json'),key=lambda p:p.stat().st_mtime_ns)]
  matches=[m for m in messages if m['purpose']==purpose and m['to']==email]
  assert matches, (purpose,email)
  return matches[-1]['url'].split('8089/')[1]
 def verify(client,email):
- client.page('account.php');client.post('account.php',dict(action='verify'))
  link=mail_link('verify',email);client.page(link);params=dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(link).query))
  assert b'Account updated' in client.post('account.php',params)
  assert b'Invalid or expired' in client.post('account.php',params)
@@ -37,7 +37,7 @@ try:
   try: owner=Client(); owner.page('install.php'); break
   except urllib.error.URLError: time.sleep(.1)
  owner.request('install.php',{},expect=403)
- fields=dict(token=env['VIDEOTUBE_INSTALL_TOKEN'],host='127.0.0.1',database='videotube_http',dbuser='root',dbpass='test',username='owner',email='owner@example.test',password='a!StrongPassword123',ffmpeg=shutil.which('ffmpeg'),ffprobe=shutil.which('ffprobe'))
+ fields=dict(token=env['VIDEOTUBE_INSTALL_TOKEN'],host='127.0.0.1',database='videotube_http',dbuser='root',dbpass='test',username='owner',email='owner@example.test',password='a!StrongPassword123',ffmpeg=shutil.which('ffmpeg'),ffprobe=shutil.which('ffprobe'),storage=str(media))
  assert b'Installation complete' in owner.post('install.php',fields)
  assert (root/'includes/local.php').stat().st_mode & 0o077 == 0
  owner.request('install.php',expect=403)
@@ -55,6 +55,10 @@ try:
  assert 'pending' in owner.page('jobs.php')
  subprocess.run(['php','bin/worker.php','--once'],env=env,check=True)
  assert 'complete' in owner.page('jobs.php')
+ # Media is written to the configured storage directory under unguessable names, never into the web root.
+ stored=[p.name for p in (media/'videos').glob('*.mp4')]
+ assert len(stored)==1 and re.fullmatch(r'[a-f0-9]{48}\.mp4',stored[0]),stored
+ assert not (root/'uploads/videos').exists() and not list((media/'queue').glob('*'))
  assert 'Private fixture' in owner.page('profile.php?username=owner')
  owner.page('watch.php?id=1'); owner.request('stream.php?id=1',headers={'Range':'bytes=0-9'},expect=206)
  owner.request('stream.php?id=1',headers={'Range':'bytes=99999999-'},expect=416)
@@ -83,7 +87,11 @@ try:
  owner.post('ajax/subscribe.php',dict(userTo='owner',userFrom='other'),expect=422)
  stale=Client();stale.page('signIn.php');stale.post('signIn.php',dict(submitButton=1,username='owner',password=fields['password']));stale.page('index.php')
  owner.page('settings.php')
- assert b'Details updated successfully' in owner.post('settings.php',dict(saveDetailsButton=1,firstName='Mohd Elfie',lastName='Site Owner',email='Mixed.Case@example.test'))
+ # Changing the recovery address needs the current password, warns the old address and re-verifies the new one.
+ assert b'current password' in owner.post('settings.php',dict(saveDetailsButton=1,firstName='Mohd Elfie',lastName='Site Owner',email='Mixed.Case@example.test'))
+ assert b'Details updated successfully' in owner.post('settings.php',dict(saveDetailsButton=1,firstName='Mohd Elfie',lastName='Site Owner',email='Mixed.Case@example.test',currentPassword=fields['password']))
+ assert any(json.loads(p.read_text()).get('purpose')=='email-changed' and json.loads(p.read_text())['to']=='owner@example.test' for p in outbox.glob('*.json'))
+ mail_link('verify','Mixed.Case@example.test')
  assert b'Password updated successfully' in owner.post('settings.php',dict(savePasswordButton=1,oldPassword=fields['password'],newPassword='changed!Password123',newPassword2='changed!Password123'))
  assert 'Mohd Elfie Site Owner' in owner.page('profile.php?username=owner')
  stale.post('ajax/likeVideo.php',dict(videoId=1),expect=403)
@@ -104,8 +112,18 @@ try:
  owner.post('admin.php',dict(action='remove_comment',id=1))
  owner.post('admin.php',dict(action='remove_video',id=1))
  guest.request('stream.php?id=1',expect=404)
+ # Oversized bodies are reported as such rather than as a session error.
+ assert b'larger than this server accepts' in owner.request('processing.php',b'x'*(53*1024*1024),{'Content-Type':'application/x-www-form-urlencoded'},expect=413)
+ # Repeated failures lock sign-in for that account, from any client, even with the right password.
+ # Each attempt arrives through the trusted proxy from a different address, so the per-address limit never trips.
+ def sign_in(address,password,expect=200):
+  client=Client();client.page('signIn.php')
+  return client.request('signIn.php',dict(submitButton=1,username='OTHER',password=password,csrf=client.csrf),{'X-Forwarded-For':'203.0.113.9, '+address},expect)
+ for attempt in range(10): assert b'incorrect' in sign_in('198.51.100.%d'%attempt,'wrong-password')
+ assert b'Too many failed sign-in attempts' in sign_in('198.51.100.200','reset!Password123',429)
  print('HTTP installation, CSRF, login/logout, upload, edit, privacy, ranges, comments and votes passed.')
 finally:
  server.terminate();server.wait(timeout=10);log.flush();log.seek(0)
- output=log.read()
+ # PHP itself logs the deliberately oversized request; every other warning is a failure.
+ output='\n'.join(line for line in log.read().splitlines() if 'POST Content-Length of' not in line)
  if 'Fatal error' in output or 'Warning:' in output or 'Uncaught' in output: print(output);raise AssertionError('PHP server emitted errors')

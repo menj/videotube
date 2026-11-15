@@ -12,6 +12,9 @@ class SettingsFormProvider {
                     $firstNameInput
                     $lastNameInput
                     $emailInput
+                    <div class='form-group'>
+                        <input class='form-control' type='password' placeholder='Current password (only needed to change your email)' name='currentPassword' autocomplete='current-password'>
+                    </div>
                     $saveButton
                 </form>";
     }

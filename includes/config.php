@@ -1,9 +1,11 @@
 <?php
 require_once __DIR__ . '/runtime.php';
+require_once __DIR__ . '/autoload.php';
+require_once __DIR__ . '/media.php';
 require_once __DIR__ . '/security.php';
 applicationSecurity();
 date_default_timezone_set('UTC');
-$local = is_file(__DIR__ . '/local.php') ? require __DIR__ . '/local.php' : [];
+$local = localSettings();
 $dsn = getenv('VIDEOTUBE_DSN'); $user = getenv('VIDEOTUBE_DB_USER'); $password = getenv('VIDEOTUBE_DB_PASSWORD');
 if ($dsn === false && empty($local['dsn'])) {
     if (PHP_SAPI !== 'cli') { header('Location: install.php'); exit; }

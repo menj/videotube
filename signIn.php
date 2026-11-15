@@ -10,8 +10,16 @@
     $username = FormSanitizer::sanitizingFormUser(inputText('username',$_POST));
     $password = FormSanitizer::sanitizingFormPassword(inputText('password',$_POST));
 
-    $wasSuccessful = $account->login($username, $password);
-      
+    require_once("includes/rate_limit.php");
+    $failureKey = loginFailureKey($username);
+    $throttled = rateLimitCount($conn, $failureKey) >= LOGIN_FAILURE_LIMIT;
+    if ($throttled) {
+        http_response_code(429);
+        header('Retry-After: ' . LOGIN_FAILURE_WINDOW);
+    }
+    $wasSuccessful = !$throttled && $account->login($username, $password);
+    if (!$throttled && !$wasSuccessful) rateLimitHit($conn, $failureKey, LOGIN_FAILURE_WINDOW);
+
     if($wasSuccessful){
        startAuthenticatedSession($conn, $username);
        header("Location: index.php");
@@ -68,6 +76,7 @@
                    <!-- displaying error message if any -->
                    <?php 
                      echo $account->getError(Constants::$UserLoginFailed);
+                     if (!empty($throttled)) echo "<span class='errorMessage'>" . h(Constants::$loginThrottled) . "</span>";
                    ?>
                    <input type="text" name="username" placeholder="User name" autocomplete='off'  value="<?php getInputValues('username') ?>" required>                   
              

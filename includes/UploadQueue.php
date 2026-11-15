@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__.'/classes/VideoUploadData.php';
-require_once __DIR__.'/classes/VideoProcessor.php';
+require_once __DIR__.'/autoload.php';
+require_once __DIR__.'/media.php';
 final class UploadQueue {
     public function __construct(private PDO $db) {}
     public function enqueue(VideoUploadData $data): int {
@@ -10,8 +10,7 @@ final class UploadQueue {
         if ($size<1 || $size>50000000 || !is_string($mime) || (!str_starts_with($mime,'video/') && !in_array($mime,['application/ogg','application/x-matroska'],true))) throw new InvalidArgumentException('Choose a supported video up to 50 MB.');
         if (trim($data->title)==='' || strlen($data->title)>70 || strlen($data->description)>1000 || !in_array((string)$data->privacy,['0','1'],true)) throw new InvalidArgumentException('Check video details.');
         $q=$this->db->prepare('SELECT id FROM categories WHERE id=?');$q->execute([$data->categories]);if (!$q->fetchColumn()) throw new InvalidArgumentException('Invalid category.');
-        $directory=dirname(__DIR__).'/uploads/queue';
-        if (!is_dir($directory) && !mkdir($directory,0750,true) && !is_dir($directory)) throw new RuntimeException('Cannot create queue storage.');
+        $directory=storageDirectory('queue');
         $path=$directory.'/'.bin2hex(random_bytes(24)).'.source';
         $this->db->beginTransaction();
         try {
@@ -33,14 +32,14 @@ final class UploadQueue {
             $job=$this->db->query("SELECT * FROM upload_jobs WHERE status IN ('pending','processing') ORDER BY id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
             if (!$job) return false;
             $this->db->prepare("UPDATE upload_jobs SET status='processing' WHERE id=?")->execute([$job['id']]);
-            $source=realpath($job['sourcePath']);$root=realpath(dirname(__DIR__).'/uploads/queue');
+            $source=realpath($job['sourcePath']);$root=realpath(storageRoot().'/queue');
             $validSource=$source && $root && str_starts_with($source,$root.DIRECTORY_SEPARATOR) && is_file($source);
             $existing=$this->db->prepare('SELECT id FROM videos WHERE uploadJobId=?');$existing->execute([$job['id']]);$done=(bool)$existing->fetchColumn();
             if (!$done && $validSource) {
                 $q=$this->db->prepare('SELECT id FROM users WHERE username=? AND suspended=0 AND emailVerifiedAt IS NOT NULL');$q->execute([$job['username']]);
                 if ($q->fetchColumn()) {
                     $p=json_decode($job['payload'],true,512,JSON_THROW_ON_ERROR);
-                    $data=new VideoUploadData(['tmp_name'=>$source,'error'=>UPLOAD_ERR_OK],$p['title'],$p['description'],$p['category'],$p['privacy'],$job['username']);$data->jobId=(int)$job['id'];
+                    $data=new VideoUploadData(['tmp_name'=>$source,'error'=>UPLOAD_ERR_OK],$p['title'],$p['description'],$p['category'],$p['privacy'],$job['username']);$data->jobId=(int)$job['id'];$data->mediaName=pathinfo($source,PATHINFO_FILENAME);
                     $done=(new VideoProcessor($this->db))->upload($data,true);
                 }
             }
