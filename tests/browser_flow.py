@@ -44,12 +44,14 @@ try:
  owner.page('signIn.php'); owner.post('signIn.php',dict(submitButton=1,username='OWNER',password=fields['password']))
  owner.page('upload.php')
  subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','color=c=blue:s=160x120:d=1','-c:v','libx264','-y','/tmp/videotube-test.mp4'],check=True)
- def upload(content):
+ def multipart(client,fields,name,filename,content,mime):
   boundary='VideoTubeBoundary'; data=b''
-  for key,value in dict(csrf=owner.csrf,titleInput='Private fixture',descriptionInput='Test description',categoryInput='16',privacyInput='0').items():
+  for key,value in dict(fields,csrf=client.csrf).items():
    data+=f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode()
-  data+=f'--{boundary}\r\nContent-Disposition: form-data; name="fileInput"; filename="test.mp4"\r\nContent-Type: video/mp4\r\n\r\n'.encode()+content+f'\r\n--{boundary}--\r\n'.encode()
+  data+=f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"; filename="{filename}"\r\nContent-Type: {mime}\r\n\r\n'.encode()+content+f'\r\n--{boundary}--\r\n'.encode()
   return data,{'Content-Type':'multipart/form-data; boundary='+boundary}
+ def upload(content,client=None):
+  return multipart(client or owner,dict(titleInput='Private fixture',descriptionInput='Test description',categoryInput='16',privacyInput='0'),'fileInput','test.mp4',content,'video/mp4')
  data,headers=upload(b'not a video');owner.request('processing.php',data,headers,expect=422)
  data,headers=upload(pathlib.Path('/tmp/videotube-test.mp4').read_bytes());owner.request('processing.php',data,headers)
  assert 'pending' in owner.page('jobs.php')
@@ -87,7 +89,11 @@ try:
  other.page('index.php');other.request('editVideo.php?videoId=1',expect=403)
  other.request('stream.php?id=1',expect=404)
  other.post('ajax/likeVideo.php',dict(videoId=1),expect=404)
- owner.page('editVideo.php?videoId=1');owner.post('editVideo.php?videoId=1',dict(title='Public fixture',description='<script>bad()</script>',privacy=1,category=16))
+ # The uploader can pick another of the generated thumbnails.
+ owner.page('editVideo.php?videoId=1');owner.post('editVideo.php?videoId=1',dict(title='Public fixture',description='<script>bad()</script>',privacy=1,category=16,thumbnail=2))
+ assert re.search(r'name="thumbnail" value="2" checked',owner.page('editVideo.php?videoId=1'))
+ # Search treats % and _ literally instead of matching everything.
+ assert 'No result found' in guest.page('search.php?term=%25')
  assert 'Public fixture' in guest.page('search.php?term=Public')
  assert '<script>bad()</script>' not in guest.page('watch.php?id=1')
  owner.post('ajax/postComment.php',dict(videoId=1,postedBy='impersonated',responseTo=0,commentText='<script>comment()</script>'))
@@ -150,11 +156,31 @@ try:
  owner.post('admin.php',dict(action='remove_comment',id=1))
  owner.post('admin.php',dict(action='remove_video',id=1))
  guest.request('stream.php?id=1',expect=404)
+ # Profile pictures are re-encoded; anything that is not an image is refused.
+ # (the earlier suspension ended this user's session)
+ other.page('signIn.php');other.post('signIn.php',dict(submitButton=1,username='other',password='reset!Password123'));other.page('settings.php')
+ subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','color=c=red:s=400x300','-frames:v','1','-y','/tmp/videotube-avatar.png'],check=True)
+ data,headers=multipart(other,dict(savePictureButton=1),'picture','me.png',b'<?php echo 1;','image/png');assert b'JPEG, PNG or WebP picture' in other.request('settings.php',data,headers)
+ data,headers=multipart(other,dict(savePictureButton=1),'picture','me.png',pathlib.Path('/tmp/videotube-avatar.png').read_bytes(),'image/png');assert b'Profile picture updated' in other.request('settings.php',data,headers)
+ avatar=re.search(r'avatar\.php\?f=[a-f0-9]{32}',guest.page('profile.php?username=other'))[0]
+ assert guest.request(avatar)[:3]==b'\xff\xd8\xff' and guest.headers['Content-Type']=='image/jpeg'
+ # Users can delete their own videos and their whole account; the only administrator cannot leave.
+ other.page('upload.php');data,headers=upload(pathlib.Path('/tmp/videotube-test.mp4').read_bytes(),other);other.request('processing.php',data,headers)
+ subprocess.run(['php','bin/worker.php','--once'],env=env,check=True)
+ assert 'Private fixture' in other.page('profile.php?username=other')
+ owner.page('index.php');owner.post('editVideo.php?videoId=2',dict(action='delete'),expect=403)
+ other.page('editVideo.php?videoId=2');other.post('editVideo.php?videoId=2',dict(action='delete'))
+ assert 'Private fixture' not in other.page('profile.php?username=other')
+ owner.page('settings.php');assert b'only administrator' in owner.post('settings.php',dict(deleteAccountButton=1,deletePassword='changed!Password123'))
+ other.page('settings.php');assert b'Password is incorrect' in other.post('settings.php',dict(deleteAccountButton=1,deletePassword='nope'))
+ other.post('settings.php',dict(deleteAccountButton=1,deletePassword='reset!Password123'))
+ assert 'User does not exist' in guest.page('profile.php?username=other')
+ other.post('ajax/likeVideo.php',dict(videoId=1),expect=403)
  # Removed media stays on disk until the cleanup tool is told to delete it.
  listing=subprocess.run(['php','bin/cleanup.php','--days=0'],env=env,check=True,capture_output=True,text=True).stdout
- assert '4 orphaned file(s)' in listing and 'not deleted' in listing and len(list((media/'videos').glob('*.mp4')))==1,listing
+ assert '9 orphaned file(s)' in listing and 'not deleted' in listing and len(list((media/'videos').glob('*.mp4')))==2,listing
  subprocess.run(['php','bin/cleanup.php','--days=0','--delete'],env=env,check=True,capture_output=True)
- assert not list((media/'videos').glob('*.mp4')) and not list((media/'videos/thumbnails').glob('*.jpg'))
+ assert not list((media/'videos').glob('*.mp4')) and not list((media/'videos/thumbnails').glob('*.jpg')) and not list((media/'avatars').glob('*.jpg'))
  # Oversized bodies are reported as such rather than as a session error.
  assert b'larger than this server accepts' in owner.request('processing.php',b'x'*(53*1024*1024),{'Content-Type':'application/x-www-form-urlencoded'},expect=413)
  # Repeated failures lock sign-in for that account, from any client, even with the right password.

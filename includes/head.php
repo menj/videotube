@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="csrf-token" content="<?= h(csrfToken()) ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<?php if (!empty($pageRefresh)): ?>
+    <meta http-equiv="refresh" content="<?= (int)$pageRefresh ?>">
+<?php endif; ?>
     <title><?= h(isset($pageTitle) ? $pageTitle . ' — VideoTube' : 'VideoTube') ?></title>
     <link href="assets/images/icons/favicon2.jpg" rel="icon">
     <link rel="stylesheet" href="assets/vendor/bootstrap-4.6.2.min.css">

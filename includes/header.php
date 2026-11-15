@@ -13,10 +13,6 @@ $userLoggedInObj = new User($conn, $usernameLoggedIn);
 
 <body data-viewer="<?= h($userLoggedInObj->viewerState()) ?>">
     <div id="pageContainer">
-    <?php if (User::isLoggedIn()): ?>
-    <nav aria-label="Account tools"><a href="jobs.php">Upload status</a> · <a href="account.php">Verify email / account help</a>
-    <?php if ($userLoggedInObj->isAdmin()): ?> · <a href="admin.php">Administration</a><?php endif; ?></nav>
-    <?php endif; ?>
         <!-- main header -->
         <div id="mastHeadContainer">
             <!-- menu bar btn -->
@@ -56,3 +52,9 @@ $userLoggedInObj = new User($conn, $usernameLoggedIn);
         <!--main section area  -->
         <div id="mainSectionContainer">
             <div id="mainContentContainer">
+<?php if ($userLoggedInObj->viewerState() === 'unverified'): ?>
+                <p class="alert alert-warning" role="status">Verify your email address to upload, comment, like and subscribe. <a href="account.php">Send me the link again</a></p>
+<?php endif; ?>
+<?php if (!empty($pageNotice)): ?>
+                <p class="alert alert-info" role="status"><?= h($pageNotice) ?></p>
+<?php endif; ?>

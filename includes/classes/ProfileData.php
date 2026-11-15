@@ -43,9 +43,10 @@ class ProfileData {
         return $this->profileUserObj->getSubscriberCount();
     }
 
-    public function getUsersVideos() {
+    /** One page of the channel's videos, plus one extra row when a further page exists. */
+    public function getUsersVideos(int $page = 1) {
         $visibility = ($_SESSION['userLoggedIn'] ?? '') === $this->getProfileUsername() ? '' : 'privacy=1 AND ';
-        $query = $this->conn->prepare("SELECT * FROM videos WHERE " . $visibility . "uploadedBy=:uploadedBy ORDER BY uploadDate DESC LIMIT 100");
+        $query = $this->conn->prepare("SELECT * FROM videos WHERE " . $visibility . "uploadedBy=:uploadedBy ORDER BY uploadDate DESC, id DESC LIMIT " . (Pager::PAGE_SIZE + 1) . " OFFSET " . Pager::offset($page));
         $query->bindParam(":uploadedBy", $username);
         $username = $this->getProfileUsername();
         $query->execute();

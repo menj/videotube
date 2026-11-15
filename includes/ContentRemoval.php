@@ -42,6 +42,12 @@ final class ContentRemoval
     /** Removes an account with its videos, comments, votes, subscriptions, tokens and queued uploads. */
     public static function account(PDO $db, string $username): bool
     {
+        // Same lock order as Moderation: all administrators first, so the last one cannot disappear.
+        $admins = $db->query("SELECT username,suspended FROM users WHERE role='admin' ORDER BY id FOR UPDATE")->fetchAll(PDO::FETCH_ASSOC);
+        $active = array_filter($admins, static fn(array $admin): bool => !$admin['suspended']);
+        if (count($active) === 1 && reset($active)['username'] === $username) {
+            throw new RuntimeException('You are the only administrator. Promote another administrator before deleting this account.');
+        }
         $q = $db->prepare('SELECT id FROM users WHERE username=? FOR UPDATE');
         $q->execute([$username]);
         $userId = $q->fetchColumn();

@@ -19,6 +19,31 @@ class SettingsFormProvider {
                 </form>";
     }
 
+    public function createPictureForm($currentPicture) {
+        $picture = h($currentPicture);
+        return "<form action='settings.php' method='POST' enctype='multipart/form-data'>
+                    <span class='title'>Profile picture</span>
+                    <div class='form-group pictureRow'>
+                        <img src='$picture' class='profilePicture' alt='Your current profile picture'>
+                        <input type='file' class='form-control-file' name='picture' accept='image/jpeg,image/png,image/webp' aria-label='New profile picture'>
+                    </div>
+                    <p class='text-muted'>JPEG, PNG or WebP up to 2 MB. It is cropped to a square.</p>
+                    <button type='submit' class='btn btn-primary' name='savePictureButton'>Upload picture</button>
+                    <button type='submit' class='btn btn-link' name='removePictureButton'>Use the default picture</button>
+                </form>";
+    }
+
+    public function createDeleteAccountForm() {
+        return "<form action='settings.php' method='POST' data-confirm='Delete your account with all of your videos and comments? This cannot be undone.'>
+                    <span class='title'>Delete account</span>
+                    <p>Removes your channel, videos, comments, likes and subscriptions permanently.</p>
+                    <div class='form-group'>
+                        <input class='form-control' type='password' placeholder='Current password' name='deletePassword' autocomplete='current-password' required>
+                    </div>
+                    <button type='submit' class='btn btn-outline-danger' name='deleteAccountButton'>Delete my account</button>
+                </form>";
+    }
+
     public function createPasswordForm() {
         $oldPasswordInput = $this->createPasswordInput("oldPassword", "Old password");
         $newPassword1Input = $this->createPasswordInput("newPassword", "New password");

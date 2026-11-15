@@ -91,6 +91,11 @@ foreach ([$guestVideo, $guestComment] as $subject) {
 }
 check((int)$db->query('SELECT COUNT(*) FROM likes')->fetchColumn() === 0, 'Guest likes do not write');
 check((int)$db->query('SELECT COUNT(*) FROM dislikes')->fetchColumn() === 0, 'Guest dislikes do not write');
+$_GET = ['page'=>'3'];
+check(Pager::current() === 3 && Pager::offset(3) === 2 * Pager::PAGE_SIZE, 'Page number and offset');
+check(str_contains(Pager::links('search.php',['term'=>'a b'],3,true),'search.php?term=a+b&amp;page=4') && str_contains(Pager::links('search.php',[],3,false),'page=2'), 'Previous and next links');
+check(Pager::links('search.php',[],1,false) === '', 'No pager for a single page');
+$_GET = [];
 check(VideoProcessor::transcodeTimeout(6.0) === 138, 'Transcode deadline follows the duration');
 check(VideoProcessor::transcodeTimeout(14400.0) === 3600, 'Transcode deadline is capped');
 echo "$count PHP compatibility checks passed on " . PHP_VERSION . "\n";

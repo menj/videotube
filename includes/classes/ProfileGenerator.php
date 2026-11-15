@@ -37,7 +37,7 @@ class ProfileGenerator {
     }
 
        public function createHeaderSection() {
-        $profileImage = $this->profileData->getProfilePic();
+        $profileImage = h($this->profileData->getProfilePic());
         $name = htmlspecialchars($this->profileData->getProfileUserFullName(),ENT_QUOTES,'UTF-8');
         $subCount = $this->profileData->getSubscriberCount();
 
@@ -45,7 +45,7 @@ class ProfileGenerator {
 
         return "<div class='profileHeader'>
                     <div class='userInfoContainer'>
-                        <img class='profileImage' src='$profileImage'>
+                        <img class='profileImage' src='$profileImage' alt=''>
                         <div class='userInfo'>
                             <span class='title'>$name</span>
                             <span class='subscriberCount'>$subCount subscribers</span>
@@ -75,11 +75,15 @@ class ProfileGenerator {
 
     public function createContentSection() {
 
-        $videos = $this->profileData->getUsersVideos();
+        $page = Pager::current();
+        $videos = $this->profileData->getUsersVideos($page);
+        $hasNext = count($videos) > Pager::PAGE_SIZE;
+        $videos = array_slice($videos, 0, Pager::PAGE_SIZE);
 
         if(sizeof($videos) > 0) {
             $videoGrid = new VideoGrid($this->conn, $this->userLoggedInObj);
-            $videoGridHtml = $videoGrid->create($videos, null, false);
+            $videoGridHtml = $videoGrid->create($videos, null, false)
+                . Pager::links('profile.php', ['username' => $this->profileData->getProfileUsername()], $page, $hasNext);
         }
         else {
             $videoGridHtml = "<span>This user has no videos</span>";
