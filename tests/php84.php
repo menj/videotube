@@ -91,4 +91,6 @@ foreach ([$guestVideo, $guestComment] as $subject) {
 }
 check((int)$db->query('SELECT COUNT(*) FROM likes')->fetchColumn() === 0, 'Guest likes do not write');
 check((int)$db->query('SELECT COUNT(*) FROM dislikes')->fetchColumn() === 0, 'Guest dislikes do not write');
+check(VideoProcessor::transcodeTimeout(6.0) === 138, 'Transcode deadline follows the duration');
+check(VideoProcessor::transcodeTimeout(14400.0) === 3600, 'Transcode deadline is capped');
 echo "$count PHP compatibility checks passed on " . PHP_VERSION . "\n";

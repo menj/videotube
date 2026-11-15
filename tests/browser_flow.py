@@ -56,10 +56,21 @@ try:
  subprocess.run(['php','bin/worker.php','--once'],env=env,check=True)
  assert 'complete' in owner.page('jobs.php')
  # Media is written to the configured storage directory under unguessable names, never into the web root.
+ assert len(list((media/'videos/thumbnails').glob('*.jpg')))==3
  stored=[p.name for p in (media/'videos').glob('*.mp4')]
  assert len(stored)==1 and re.fullmatch(r'[a-f0-9]{48}\.mp4',stored[0]),stored
  assert not (root/'uploads/videos').exists() and not list((media/'queue').glob('*'))
  assert 'Private fixture' in owner.page('profile.php?username=owner')
+ # A file that cannot be published fails with a reason the uploader can act on.
+ subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','sine=d=1','-c:a','aac','-f','mp4','-y','/tmp/videotube-audio.mp4'],check=True)
+ data,headers=upload(pathlib.Path('/tmp/videotube-audio.mp4').read_bytes());owner.request('processing.php',data,headers)
+ subprocess.run(['php','bin/worker.php','--once'],env=env,check=True)
+ assert 'no playable video' in owner.page('jobs.php')
+ # A job that keeps taking the worker down is abandoned instead of blocking the queue.
+ data,headers=upload(pathlib.Path('/tmp/videotube-test.mp4').read_bytes());owner.request('processing.php',data,headers)
+ subprocess.run(['php','-r','$db=new PDO("mysql:host=127.0.0.1;dbname=videotube_http","root","test"); $db->exec("UPDATE upload_jobs SET status=\'processing\', attempts=3 WHERE id=3");'],check=True)
+ subprocess.run(['php','bin/worker.php','--once'],env=env,check=True)
+ assert 'interrupted 3 times' in owner.page('jobs.php') and not list((media/'queue').glob('*'))
  owner.page('watch.php?id=1'); owner.request('stream.php?id=1',headers={'Range':'bytes=0-9'},expect=206)
  owner.request('stream.php?id=1',headers={'Range':'bytes=99999999-'},expect=416)
  owner.request('thumbnail.php?id=1')
@@ -139,6 +150,11 @@ try:
  owner.post('admin.php',dict(action='remove_comment',id=1))
  owner.post('admin.php',dict(action='remove_video',id=1))
  guest.request('stream.php?id=1',expect=404)
+ # Removed media stays on disk until the cleanup tool is told to delete it.
+ listing=subprocess.run(['php','bin/cleanup.php','--days=0'],env=env,check=True,capture_output=True,text=True).stdout
+ assert '4 orphaned file(s)' in listing and 'not deleted' in listing and len(list((media/'videos').glob('*.mp4')))==1,listing
+ subprocess.run(['php','bin/cleanup.php','--days=0','--delete'],env=env,check=True,capture_output=True)
+ assert not list((media/'videos').glob('*.mp4')) and not list((media/'videos/thumbnails').glob('*.jpg'))
  # Oversized bodies are reported as such rather than as a session error.
  assert b'larger than this server accepts' in owner.request('processing.php',b'x'*(53*1024*1024),{'Content-Type':'application/x-www-form-urlencoded'},expect=413)
  # Repeated failures lock sign-in for that account, from any client, even with the right password.
