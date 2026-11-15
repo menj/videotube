@@ -1,33 +1,27 @@
 <?php
-require_once 'includes/config.php';
+// Media requests only read the session, so they must not hold its lock while the file is sent.
+const VIDEOTUBE_SESSION_READONLY = true;
+require_once __DIR__ . '/includes/config.php';
+
 if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)) {
-    http_response_code(405); header('Allow: GET, HEAD'); exit;
+    http_response_code(405);
+    header('Allow: GET, HEAD');
+    exit;
 }
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-try { $video = new Video($conn,$id ?: 0,null); } catch (OutOfBoundsException $e) { http_response_code(404); exit; }
-if (!$video->canView($_SESSION['userLoggedIn'] ?? '')) { http_response_code(404); exit; }
-$path = storedFile($video->getVideoFilePath(), 'videos');
-if ($path === null) { http_response_code(404); exit; }
-$size = filesize($path);
-header('Accept-Ranges: bytes');
-header('Content-Type: video/mp4');
-header('X-Content-Type-Options: nosniff');
-header('Cache-Control: private, no-store');
-try { $range = MediaRange::parse($_SERVER['HTTP_RANGE'] ?? null, $size); }
-catch (RangeException $e) { http_response_code(416); header('Content-Range: bytes */' . $size); exit; }
-[$start, $end] = $range ?? [0, $size - 1];
-if ($range !== null) { http_response_code(206); header("Content-Range: bytes $start-$end/$size"); }
-$remaining = $end - $start + 1;
-header('Content-Length: ' . $remaining);
-if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
-while (ob_get_level()) ob_end_clean();
-if ($_SERVER['REQUEST_METHOD'] === 'HEAD') exit;
-$handle = fopen($path, 'rb');
-fseek($handle, $start);
-while ($remaining > 0 && !feof($handle) && !connection_aborted()) {
-    $chunk = fread($handle, min(65536, $remaining));
-    if ($chunk === false || $chunk === '') break;
-    echo $chunk;
-    $remaining -= strlen($chunk);
+try {
+    $video = new Video($conn, $id ?: 0, null);
+} catch (OutOfBoundsException $e) {
+    http_response_code(404);
+    exit;
 }
-fclose($handle);
+if (!$video->canView($_SESSION['userLoggedIn'] ?? '')) {
+    http_response_code(404);
+    exit;
+}
+$path = storedFile($video->getVideoFilePath(), 'videos');
+if ($path === null) {
+    http_response_code(404);
+    exit;
+}
+sendStoredFile($path, 'video/mp4', (int)$video->getVideoPrivacy() === 1);

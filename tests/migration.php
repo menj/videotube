@@ -17,6 +17,11 @@ if ($db->query('SELECT password FROM users WHERE id=1')->fetchColumn()!=='origin
 if ($db->query('SELECT title FROM videos WHERE id=1')->fetchColumn()!=='Original title') throw new RuntimeException('Video lost');
 if ((int)$db->query('SELECT commentId FROM likes WHERE id=1')->fetchColumn()!==0) throw new RuntimeException('Legacy default not migrated');
 if ($db->query("SELECT role FROM users WHERE id=1")->fetchColumn()!=='admin') throw new RuntimeException('Administrator not promoted');
+// Version 2 adds the lookup indexes and the job attempt counter to an existing database.
+$indexes=array_column($db->query('SHOW INDEX FROM likes')->fetchAll(PDO::FETCH_ASSOC),'Key_name');
+if (!in_array('by_video',$indexes,true) || !in_array('by_comment',$indexes,true)) throw new RuntimeException('Vote lookup indexes missing');
+if (!in_array('attempts',$db->query('SHOW COLUMNS FROM upload_jobs')->fetchAll(PDO::FETCH_COLUMN),true)) throw new RuntimeException('Job attempt counter missing');
+if ((int)$db->query('SELECT MAX(version) FROM schema_migrations')->fetchColumn()!==2) throw new RuntimeException('Schema version not recorded');
 // Duplicate preflight must fail before changing the schema.
 $db->exec('ALTER TABLE users DROP INDEX email_unique');
 $db->exec("INSERT INTO users(username,email,password,firstName,lastName,profilePic) VALUES('second','legacy@example.test','hash','Other','User','avatar.png')");

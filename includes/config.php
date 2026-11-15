@@ -23,7 +23,7 @@ if (PHP_SAPI !== 'cli' && !empty($_SESSION['userLoggedIn'])) {
     if (!empty($accountState['suspended']) || !is_string($stored) || !is_string($_SESSION['authVersion'] ?? null)
         || !hash_equals(hash('sha256',$stored.':'.$accountState['sessionVersion']),$_SESSION['authVersion'])) {
         unset($_SESSION['userLoggedIn'],$_SESSION['authVersion']);
-        session_regenerate_id(true);
+        if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
     }
 }
 

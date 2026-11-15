@@ -8,7 +8,9 @@ CREATE TABLE `dislikes` (
   `username` varchar(50) NOT NULL,
   `commentId` int(11) NOT NULL DEFAULT 0,
   `videoId` int(11) NOT NULL DEFAULT 0,
- UNIQUE KEY vote_unique(username,videoId,commentId)
+ UNIQUE KEY vote_unique(username,videoId,commentId),
+ KEY by_video (videoId),
+ KEY by_comment (commentId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `likes` (
@@ -16,14 +18,17 @@ CREATE TABLE `likes` (
   `username` varchar(50) NOT NULL,
   `commentId` int(11) NOT NULL DEFAULT 0,
   `videoId` int(11) NOT NULL DEFAULT 0,
- UNIQUE KEY vote_unique(username,videoId,commentId)
+ UNIQUE KEY vote_unique(username,videoId,commentId),
+ KEY by_video (videoId),
+ KEY by_comment (commentId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `thumbnails` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `videoid` int(11) NOT NULL,
   `filepath` varchar(250) NOT NULL,
-  `selected` int(11) NOT NULL
+  `selected` int(11) NOT NULL,
+ KEY by_video (videoid, selected)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `users` (
@@ -54,18 +59,22 @@ CREATE TABLE `videos` (
   `uploadDate` datetime NOT NULL DEFAULT current_timestamp(),
   `views` int(11) NOT NULL DEFAULT 0,
   `duration` varchar(10) NOT NULL DEFAULT '00:00',
-  uploadJobId BIGINT NULL UNIQUE
+  uploadJobId BIGINT NULL UNIQUE,
+ KEY by_uploader (uploadedBy, uploadDate),
+ KEY by_visibility (privacy, uploadDate)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE comments (
  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, postedBy VARCHAR(50) NOT NULL,
  videoId INT NOT NULL, responseTo INT NOT NULL DEFAULT 0, body TEXT NOT NULL,
- datePosted DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX(videoId), INDEX(responseTo)
+ datePosted DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX(videoId), INDEX(responseTo),
+ KEY by_thread (videoId, responseTo), KEY by_author (postedBy)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE subscribers (
  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, userTo VARCHAR(50) NOT NULL, userFrom VARCHAR(50) NOT NULL,
- UNIQUE KEY subscription(userTo,userFrom)
+ UNIQUE KEY subscription(userTo,userFrom),
+ KEY by_subscriber (userFrom)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `categories` (`id`, `name`) VALUES
@@ -99,6 +108,7 @@ CREATE TABLE upload_jobs (
  id BIGINT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(25) NOT NULL,
  payload JSON NOT NULL, sourcePath VARCHAR(255) NOT NULL,
  status VARCHAR(16) NOT NULL DEFAULT 'pending', error VARCHAR(255) NULL,
+ attempts INT NOT NULL DEFAULT 0,
  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, finishedAt DATETIME NULL,
  INDEX(status,id), INDEX(username,id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -110,4 +120,4 @@ CREATE TABLE moderation_log (
 CREATE TABLE schema_migrations (
  version INT PRIMARY KEY, appliedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-INSERT INTO schema_migrations(version) VALUES(1);
+INSERT INTO schema_migrations(version) VALUES(1),(2);

@@ -51,3 +51,102 @@ function storedFile(?string $relative, string $area): ?string
     }
     return $path;
 }
+
+/**
+ * Send a stored file with validators and byte-range support, then stop.
+ *
+ * Shared media may be kept by the browser for an hour; anything else is revalidated on every
+ * use. When the web server can serve protected files itself, PHP only authorises the request:
+ * set VIDEOTUBE_ACCEL_REDIRECT to an internal Nginx location (for example "/protected-media/")
+ * or VIDEOTUBE_XSENDFILE=1 for Apache mod_xsendfile.
+ */
+function sendStoredFile(string $path, string $contentType, bool $shared): never
+{
+    $size = filesize($path);
+    $modified = filemtime($path);
+    $etag = '"' . dechex($modified) . '-' . dechex($size) . '"';
+
+    header('Content-Type: ' . $contentType);
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: ' . ($shared ? 'private, max-age=3600' : 'private, no-cache'));
+    header('ETag: ' . $etag);
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $modified) . ' GMT');
+    header('Accept-Ranges: bytes');
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    if (trim((string)($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
+        http_response_code(304);
+        exit;
+    }
+
+    $accel = (string)getenv('VIDEOTUBE_ACCEL_REDIRECT');
+    $root = realpath(storageRoot());
+    if ($accel !== '' && $root && str_starts_with($path, $root . DIRECTORY_SEPARATOR)) {
+        $relative = implode('/', array_map('rawurlencode', explode('/', substr($path, strlen($root) + 1))));
+        header('X-Accel-Redirect: ' . rtrim($accel, '/') . '/' . $relative);
+        exit;
+    }
+    if (getenv('VIDEOTUBE_XSENDFILE') === '1') {
+        header('X-Sendfile: ' . $path);
+        exit;
+    }
+
+    // A range is honoured only for the version the client already holds part of.
+    $rangeHeader = $_SERVER['HTTP_RANGE'] ?? null;
+    $ifRange = trim((string)($_SERVER['HTTP_IF_RANGE'] ?? ''));
+    if ($ifRange !== '' && $ifRange !== $etag) {
+        $rangeHeader = null;
+    }
+    try {
+        $range = MediaRange::parse($rangeHeader, $size);
+    } catch (RangeException $e) {
+        http_response_code(416);
+        header('Content-Range: bytes */' . $size);
+        exit;
+    }
+    [$start, $end] = $range ?? [0, $size - 1];
+    if ($range !== null) {
+        http_response_code(206);
+        header("Content-Range: bytes $start-$end/$size");
+    }
+    $remaining = $end - $start + 1;
+    header('Content-Length: ' . $remaining);
+    if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {
+        exit;
+    }
+    $handle = fopen($path, 'rb');
+    fseek($handle, $start);
+    while ($remaining > 0 && !feof($handle) && !connection_aborted()) {
+        $chunk = fread($handle, min(65536, $remaining));
+        if ($chunk === false || $chunk === '') {
+            break;
+        }
+        echo $chunk;
+        $remaining -= strlen($chunk);
+    }
+    fclose($handle);
+    exit;
+}
+
+/** Send a file bundled with the application (not from media storage) and stop. */
+function sendBundledFile(string $path, string $contentType): never
+{
+    header('Content-Type: ' . $contentType);
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: private, max-age=3600');
+    header('Content-Length: ' . filesize($path));
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    if ($_SERVER['REQUEST_METHOD'] !== 'HEAD') {
+        readfile($path);
+    }
+    exit;
+}

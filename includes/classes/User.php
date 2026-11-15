@@ -4,8 +4,10 @@
 class User {
     private $conn, $sqlData;
 
+    /** @param string|array $username a username to look up, or an already loaded users row */
     public function __construct($conn, $username){
         $this->conn = $conn;
+        if (is_array($username)) { $this->sqlData = $username; return; }
 
         $query = $this->conn->prepare("SELECT * FROM users WHERE username = :un");
         $query->bindParam(":un", $username);
@@ -95,15 +97,13 @@ class User {
 
 
     public function getSubscriptions() {
-        $query = $this->conn->prepare("SELECT userTo FROM subscribers WHERE userFrom=:userFrom");
-        $username = $this->getUsername();
-        $query->bindParam(":userFrom", $username);
-        $query->execute();
-        
+        $query = $this->conn->prepare("SELECT u.* FROM subscribers s INNER JOIN users u ON u.username = s.userTo
+                                        WHERE s.userFrom = ? ORDER BY u.username LIMIT 200");
+        $query->execute([$this->getUsername()]);
+
         $subs = array();
         while($row = $query->fetch(PDO::FETCH_ASSOC)) {
-            $user = new User($this->conn, $row["userTo"]);
-            array_push($subs, $user);
+            $subs[] = new User($this->conn, $row);
         }
         return $subs;
     }

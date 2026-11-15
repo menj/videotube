@@ -14,7 +14,7 @@
         exit;
     }
     if (!$video->canView($userLoggedInObj->getUsername())) { http_response_code(404); exit('Video not found'); }
-    $video->increamentViews();
+    $video->recordView($userLoggedInObj->getUsername());
         
  ?>
 

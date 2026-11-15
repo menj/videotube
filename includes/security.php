@@ -50,7 +50,15 @@ function applicationSecurity(): void {
         . "media-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; "
         . "form-action 'self'; frame-ancestors 'self'");
     if (secureTransport()) header('Strict-Transport-Security: max-age=31536000');
-    if (session_status() !== PHP_SESSION_ACTIVE) session_start(['use_strict_mode'=>true,'cookie_httponly'=>true,'cookie_secure'=>secureTransport(),'cookie_samesite'=>'Lax']);
+    // Media endpoints declare VIDEOTUBE_SESSION_READONLY: the session is read and released at once, so
+    // a page's thumbnails and video are not served one at a time behind the session lock. Clients
+    // without a session cookie get no session at all there.
+    $readOnly = defined('VIDEOTUBE_SESSION_READONLY');
+    $options = ['use_strict_mode'=>true,'cookie_httponly'=>true,'cookie_secure'=>secureTransport(),'cookie_samesite'=>'Lax'];
+    if ($readOnly) {
+        $_SESSION = [];
+        if (isset($_COOKIE[session_name()])) session_start($options + ['read_and_close'=>true]);
+    } elseif (session_status() !== PHP_SESSION_ACTIVE) session_start($options);
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // PHP discards $_POST and $_FILES when the body exceeds post_max_size.
         $limit = ini_parse_quantity((string)ini_get('post_max_size'));

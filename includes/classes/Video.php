@@ -78,12 +78,19 @@ class Video {
     }
 
     public function getVideoThumbnail() {
-          $query = $this->conn->prepare("SELECT filePath FROM thumbnails WHERE videoId = :videoId AND selected=1");
-          $query->bindParam(":videoId", $videoId);
-          $videoId = $this->getVideoId();
-          $query->execute();
+          // thumbnail.php falls back to the site logo, so listings need no query per video.
+          return 'thumbnail.php?id=' . (int)$this->getVideoId();
+    }
 
-          return $query->fetchColumn() ? 'thumbnail.php?id=' . (int)$this->getVideoId() : 'assets/images/icons/VideoTubeLogo.png';
+    /**
+     * Count a view unless this viewer (account, or address for guests) was already counted for
+     * this video in the current six-hour window. Uploaders do not count on their own videos.
+     */
+    public function recordView(string $viewer): void {
+        if ($viewer !== '' && $viewer === $this->sqlData['uploadedBy']) return;
+        $subject = $viewer !== '' ? 'user:' . $viewer : 'address:' . clientAddress();
+        $key = rateLimitKey('view|' . (int)$this->getVideoId(), $subject, 21600);
+        if (rateLimitHit($this->conn, $key, 21600) === 1) $this->increamentViews();
     }
 
     public function increamentViews(){

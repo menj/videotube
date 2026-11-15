@@ -4,6 +4,7 @@
     private $conn, $userLoggedInObj;
     private $largeMode = false;
     private $gridClass = "videoGrid";
+    private const RECOMMENDED = 15;
 
     public function __construct($conn, $userLoggedInObj) {
         $this->conn = $conn;
@@ -32,11 +33,23 @@
     }
 
       public function generateItems() {
-        $query = $this->conn->prepare("SELECT * FROM videos WHERE privacy=1 ORDER BY RAND() LIMIT 15");
-        $query->execute();
+        // ORDER BY RAND() sorts the whole table. Start at a random id instead, read the next public
+        // videos by primary key, wrap around if the end is reached, then shuffle the handful found.
+        $max = (int)$this->conn->query("SELECT MAX(id) FROM videos")->fetchColumn();
+        if ($max < 1) return "";
+        $pivot = random_int(1, $max);
+        $query = $this->conn->prepare("SELECT * FROM videos WHERE privacy=1 AND id >= ? ORDER BY id LIMIT " . self::RECOMMENDED);
+        $query->execute([$pivot]);
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+        if (count($rows) < self::RECOMMENDED) {
+            $query = $this->conn->prepare("SELECT * FROM videos WHERE privacy=1 AND id < ? ORDER BY id DESC LIMIT " . (self::RECOMMENDED - count($rows)));
+            $query->execute([$pivot]);
+            $rows = array_merge($rows, $query->fetchAll(PDO::FETCH_ASSOC));
+        }
+        shuffle($rows);
 
         $elementHtml = "";
-        while($row = $query->fetch(PDO::FETCH_ASSOC)) {
+        foreach ($rows as $row) {
             $video = new Video($this->conn, $row, $this->userLoggedInObj);
             $item = new VideoGridItem($video, $this->largeMode);
             $elementHtml .= $item->create();

@@ -63,6 +63,9 @@ try:
  owner.page('watch.php?id=1'); owner.request('stream.php?id=1',headers={'Range':'bytes=0-9'},expect=206)
  owner.request('stream.php?id=1',headers={'Range':'bytes=99999999-'},expect=416)
  owner.request('thumbnail.php?id=1')
+ # Media carries validators: an unchanged file is answered with 304, and private media is never cached blindly.
+ assert 'no-cache' in owner.headers['Cache-Control']
+ owner.request('thumbnail.php?id=1',headers={'If-None-Match':owner.headers['ETag']},expect=304)
  guest=Client();assert 'Private fixture' not in guest.page('index.php')
  for path in ['watch.php?id=1','stream.php?id=1','thumbnail.php?id=1']: guest.request(path,expect=404)
  guest.post('ajax/likeVideo.php',{'videoId':1},expect=403)
@@ -77,6 +80,10 @@ try:
  assert 'Public fixture' in guest.page('search.php?term=Public')
  assert '<script>bad()</script>' not in guest.page('watch.php?id=1')
  owner.post('ajax/postComment.php',dict(videoId=1,postedBy='impersonated',responseTo=0,commentText='<script>comment()</script>'))
+ # Repeat visits by the same viewer count once; the uploader's own visits never count.
+ owner.page('watch.php?id=1');guest.page('watch.php?id=1')
+ assert '<span class="viewCount">1 views</span>' in guest.page('watch.php?id=1')
+ guest.request('thumbnail.php?id=1');assert 'max-age=3600' in guest.headers['Cache-Control']
  body=guest.page('watch.php?id=1');assert '<script>comment()</script>' not in body and '&lt;script&gt;comment()' in body
  # Pages carry a strict policy and no inline script or style for it to block.
  assert "script-src 'self'" in guest.headers['Content-Security-Policy'] and 'unsafe-inline' not in guest.headers['Content-Security-Policy']

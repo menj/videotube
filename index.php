@@ -12,7 +12,7 @@
     $subscriptionsProvider = new SubscriptionsProvider($conn, $userLoggedInObj);
     $subscriptionVideos = $subscriptionsProvider->getVideos();
 
-    $videoGrid = new VideoGrid($conn, $userLoggedInObj->getUsername());
+    $videoGrid = new VideoGrid($conn, $userLoggedInObj);
 
     if(User::isLoggedIn() && sizeof($subscriptionVideos) > 0) {
         echo $videoGrid->create($subscriptionVideos, "Subscriptions", false);

@@ -41,7 +41,7 @@ $db->exec("INSERT INTO users VALUES(2,'viewer','View','User','','','2020-01-02')
 $viewer = new User($db,'viewer');
 check($viewer->isSubscribedTo('owner'), 'Subscription parameter spelling');
 $video = new Video($db,1,$owner);
-check($video->getVideoThumbnail() === 'assets/images/icons/VideoTubeLogo.png', 'Missing thumbnail fallback');
+check($video->getVideoThumbnail() === 'thumbnail.php?id=1', 'Thumbnail URL needs no lookup');
 check($video->getVideoDisLikes() == 0, 'Lowercase dislikes table');
 try { new Video($db,999,$owner); check(false,'Missing video exception'); }
 catch (OutOfBoundsException $e) { check(true,'Missing video exception'); }

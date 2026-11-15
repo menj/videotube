@@ -42,6 +42,15 @@ final class Migration {
                     if (!$found) $plan[]="ALTER TABLE `$table` ADD UNIQUE KEY `$name` (".implode(',',$columns).')';
                 }
             }
+            // Version 2: lookup indexes for vote counts, feeds and comment threads, and the job attempt counter.
+            $lookups=['likes'=>['by_video'=>'videoId','by_comment'=>'commentId'],'dislikes'=>['by_video'=>'videoId','by_comment'=>'commentId'],
+                'thumbnails'=>['by_video'=>'videoid,selected'],'videos'=>['by_uploader'=>'uploadedBy,uploadDate','by_visibility'=>'privacy,uploadDate'],
+                'comments'=>['by_thread'=>'videoId,responseTo','by_author'=>'postedBy'],'subscribers'=>['by_subscriber'=>'userFrom']];
+            foreach ($lookups as $table=>$indexes) if (in_array($table,$tables,true)) {
+                $names=array_column($db->query("SHOW INDEX FROM `$table`")->fetchAll(PDO::FETCH_ASSOC),'Key_name');
+                foreach ($indexes as $name=>$columns) if (!in_array($name,$names,true)) $plan[]="ALTER TABLE `$table` ADD INDEX `$name` ($columns)";
+            }
+            if (in_array('upload_jobs',$tables,true) && !in_array('attempts',$db->query('SHOW COLUMNS FROM upload_jobs')->fetchAll(PDO::FETCH_COLUMN),true)) $plan[]='ALTER TABLE upload_jobs ADD attempts INT NOT NULL DEFAULT 0';
             foreach ($tables as $table) if (in_array($table,['users','videos','likes','dislikes','comments','subscribers','thumbnails','categories','request_limits'],true)) $plan[]="ALTER TABLE `$table` ENGINE=InnoDB";
             if ($dryRun) return $plan;
             // DDL commits implicitly. Every step is repeatable; never drop user tables or rows.
@@ -49,7 +58,7 @@ final class Migration {
             $db->beginTransaction();
             try {
                 $q=$db->prepare("UPDATE users SET role='admin',suspended=0,emailVerifiedAt=COALESCE(emailVerifiedAt,UTC_TIMESTAMP()) WHERE id=?");$q->execute([$adminId]);
-                $db->exec('INSERT IGNORE INTO schema_migrations(version) VALUES(1)');$db->commit();
+                $db->exec('INSERT IGNORE INTO schema_migrations(version) VALUES(1),(2)');$db->commit();
             } catch (Throwable $e) { $db->rollBack();throw $e; }
             return $plan;
         } finally { $q=$db->prepare('SELECT RELEASE_LOCK(?)');$q->execute([$lock]); }
