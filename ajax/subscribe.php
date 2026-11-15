@@ -1,51 +1,31 @@
 <?php
-require_once __DIR__ . '/../includes/ajax.php'; 
-   
-   require_once("../includes/config.php");
+require_once __DIR__ . '/../includes/ajax.php';
 
-   if(isset($_POST["userTo"])){
-       $userTo = inputText('userTo',$_POST);
-       $userFrom = requireLogin();
-       if ($userTo === $userFrom) { http_response_code(422); exit; }
-       $target=$conn->prepare('SELECT id FROM users WHERE username=?'); $target->execute([$userTo]);
-       if (!$target->fetchColumn()) { http_response_code(404); exit; }
+// Toggles the viewer's subscription to a channel and answers with its new subscriber count.
+if (!isset($_POST['userTo'])) {
+    http_response_code(400);
+    exit('Missing subscription target.');
+}
+$userTo = inputText('userTo', $_POST);
+if ($userTo === $viewer) {
+    http_response_code(422);
+    exit('You cannot subscribe to yourself.');
+}
+$target = $conn->prepare('SELECT username FROM users WHERE username=?');
+$target->execute([$userTo]);
+$userTo = $target->fetchColumn();
+if ($userTo === false) {
+    http_response_code(404);
+    exit;
+}
 
-       /* 1) check wheather user is already subscribed
-          2) If not subscribed insert into database
-          3) else delete from the database / unsubscribe
-          4) return number of subscriber 
-       */
-       $query = $conn->prepare("SELECT * FROM subscribers WHERE userTo = :userTo AND userFrom = :userFrom");
-       $query->bindParam(":userTo", $userTo);
-       $query->bindParam(":userFrom", $userFrom);
-       $query->execute();
+$query = $conn->prepare('DELETE FROM subscribers WHERE userTo=? AND userFrom=?');
+$query->execute([$userTo, $viewer]);
+if ($query->rowCount() === 0) {
+    $conn->prepare('INSERT INTO subscribers(userTo, userFrom) VALUES(?, ?)')->execute([$userTo, $viewer]);
+}
 
-       if($query->rowCount() == 0){
-           //insert
-           $query = $conn->prepare("INSERT INTO subscribers(userTo, userFrom)
-                                  VALUES(:userTo, :userFrom)"); 
-           $query->bindParam(":userTo", $userTo);
-           $query->bindParam(":userFrom", $userFrom);
-           $query->execute();         
-        }
-       else {
-           //DELETE
-            $query = $conn->prepare("DELETE  FROM subscribers WHERE userTo = :userTo AND userFrom = :userFrom");
-            $query->bindParam(":userTo", $userTo);
-            $query->bindParam(":userFrom", $userFrom);
-            $query->execute();
-       }
-       //RETURN NO. OF SUBS
-       $query = $conn->prepare("SELECT * FROM subscribers WHERE userTo = :userTo ");
-       $query->bindParam(":userTo", $userTo);
-       $query->execute();
-
-       echo $query->rowCount();
-
-   }
-   else{
-       http_response_code(400); echo 'Missing subscription target.';
-   }
-
-if ($conn->inTransaction()) $conn->commit();
-?>
+$query = $conn->prepare('SELECT COUNT(*) FROM subscribers WHERE userTo=?');
+$query->execute([$userTo]);
+echo (int)$query->fetchColumn();
+$conn->commit();

@@ -1,6 +1,5 @@
 <?php
 require_once("includes/header.php");
-require_once("includes/classes/LikedVideosProvider.php");
 
 if(!User::isLoggedIn()) {
     header("Location: signIn.php");

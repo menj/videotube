@@ -72,9 +72,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     finally { if ($staged !== null && is_file($staged)) unlink($staged); flock($lock, LOCK_UN); fclose($lock); }
 }
 ?>
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Install VideoTube</title><style>body{font-size:19px;max-width:640px;margin:40px auto;padding:20px;background:#f5f6fa}label{display:block;margin:16px 0}input{display:block;box-sizing:border-box;width:100%;padding:10px}button{padding:12px 24px}p{line-height:1.5}</style>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install VideoTube</title>
 <link rel="stylesheet" href="assets/CSS/fonts.css">
+<link rel="stylesheet" href="assets/CSS/standalone.css">
+</head>
+<body class="standalone narrow">
 <h1>Install VideoTube</h1>
 <?php if ($done): ?><p>Installation complete. Remove the installation token from your hosting environment.</p><a href="signIn.php">Sign in</a>
 <?php else: ?>
@@ -84,4 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <form method="post">
 <?php foreach (['token'=>'Installation token','host'=>'Database host','database'=>'Database name','dbuser'=>'Database username','dbpass'=>'Database password','username'=>'Your username','email'=>'Your email','password'=>'Your password (12–72 bytes)','ffmpeg'=>'Absolute path to FFmpeg','ffprobe'=>'Absolute path to FFprobe','storage'=>'Media storage directory outside the web root (optional)'] as $field=>$label): ?>
 <label><?= e($label) ?><input name="<?= e($field) ?>" type="<?= in_array($field,['token','password','dbpass'],true)?'password':($field==='email'?'email':'text') ?>" <?= in_array($field,['dbpass','storage'],true)?'':'required' ?> autocomplete="off"></label>
-<?php endforeach; ?><button>Install VideoTube</button></form><?php endif; ?></html>
+<?php endforeach; ?><button>Install VideoTube</button></form><?php endif; ?>
+</body>
+</html>

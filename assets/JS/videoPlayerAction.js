@@ -1,56 +1,30 @@
-function likeVideo(button, videoId){
-    $.post("ajax/likeVideo.php",{videoId:videoId})
-     .done(function(data){
-        
-        let likeButton = $(button);
-        let disLikeButton = $(button).siblings(".disLikeButton");
+(function () {
+    const icons = 'assets/images/icons/';
 
-        likeButton.addClass("active");
-        disLikeButton.removeClass("active");
-        
-        let result = JSON.parse(data);
-        
-        updateLikeValue(likeButton.find(".text"), result.likes)
-        updateLikeValue(disLikeButton.find(".text"), result.disLikes)
-        
-        if(result.likes < 0){
-            likeButton.removeClass("active");
-            likeButton.find("img:first").attr("src","assets/images/icons/thumb-up.png");
-        }else{
-            likeButton.find("img:first").attr("src","assets/images/icons/thumb-up-active.png");
-        }
-         disLikeButton.find("img:first").attr("src","assets/images/icons/thumb-down.png");
+    function vote(endpoint, own, other, ownIcon, otherIcon, ownKey) {
+        return function (button, data) {
+            if (!VideoTube.requireMember()) {
+                return;
+            }
+            $.post('ajax/' + endpoint, { videoId: data.videoId }).done(function (response) {
+                const result = JSON.parse(response);
+                const ownButton = button;
+                const otherButton = button.siblings(other);
+                const likeButton = own === '.likeButton' ? ownButton : otherButton;
+                const dislikeButton = own === '.likeButton' ? otherButton : ownButton;
 
-     });
+                VideoTube.updateCount(likeButton.find('.text'), result.likes);
+                VideoTube.updateCount(dislikeButton.find('.text'), result.disLikes);
+
+                const active = result[ownKey] > 0;
+                ownButton.toggleClass('active', active);
+                ownButton.find('img:first').attr('src', icons + ownIcon + (active ? '-active' : '') + '.png');
+                otherButton.removeClass('active');
+                otherButton.find('img:first').attr('src', icons + otherIcon + '.png');
+            });
+        };
     }
 
-
-    function disLikeVideo(button, videoId){
-        $.post("ajax/disLikeVideo.php",{videoId:videoId})
-         .done(function(data){
-            
-            let disLikeButton = $(button);
-            let likeButton = $(button).siblings(".likeButton");
-    
-            disLikeButton.addClass("active");
-            likeButton.removeClass("active");
-            
-            let result = JSON.parse(data);
-            
-            updateLikeValue(likeButton.find(".text"), result.likes)
-            updateLikeValue(disLikeButton.find(".text"), result.disLikes)
-            
-            if(result.disLikes < 0){
-                disLikeButton.removeClass("active");
-                disLikeButton.find("img:first").attr("src","assets/images/icons/thumb-down.png");
-            }else{
-                disLikeButton.find("img:first").attr("src","assets/images/icons/thumb-down-active.png");
-            }
-            likeButton.find("img:first").attr("src","assets/images/icons/thumb-up.png");
-    
-         });
-        }
-    
-
-
-    
+    VideoTube.actions.likeVideo = vote('likeVideo.php', '.likeButton', '.disLikeButton', 'thumb-up', 'thumb-down', 'likes');
+    VideoTube.actions.dislikeVideo = vote('disLikeVideo.php', '.disLikeButton', '.likeButton', 'thumb-down', 'thumb-up', 'disLikes');
+})();

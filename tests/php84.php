@@ -5,6 +5,7 @@ set_error_handler(function ($severity, $message, $file, $line) {
 });
 chdir(dirname(__DIR__));
 require 'includes/runtime.php';
+require 'includes/security.php';
 foreach (glob('includes/classes/*.php') as $classFile) require_once $classFile;
 $count = 0;
 function check($condition, $message) {

@@ -14,7 +14,7 @@
            $privacyInput = $this->createPrivacyInput();
            $categoriesInput = $this->createCategoriesInput();
            $uploadButton = $this->createUploadButton();
-           return "<form action='processing.php' method='POST' enctype='multipart/form-data'>
+           return "<form action='processing.php' method='POST' enctype='multipart/form-data' data-busy-modal='#modalLoader'>
                 $fileInput
                 $titleInput
                 $descriptionInput
@@ -27,18 +27,18 @@
         private function createFileInput() {
             return "<div class='form-group'>
               <label for='exampleFormControlFile1'>Your file</label>
-              <input type='file' class='form-control-file' id='exampleFormControlFile1' name='fileInput' required>
+              <input type='file' class='form-control-file' id='exampleFormControlFile1' name='fileInput' accept='video/*' required>
             </div>";
         }   
 
         private function createTitleInput(){
             return "<div class='form-group'>
-            <input class='form-control' type='text' placeholder='Title' name='titleInput' required>
+            <input class='form-control' type='text' placeholder='Title' name='titleInput' maxlength='70' required>
             </div>";
         }
         private function createDescriptionInput(){
                 return "<div class='form-group'>
-                        <textarea class='form-control' type='text' placeholder='Description' name='descriptionInput' rows='4' required></textarea>
+                        <textarea class='form-control' type='text' placeholder='Description' name='descriptionInput' rows='4' maxlength='1000' required></textarea>
                 </div>";
         }
 
@@ -60,7 +60,7 @@
                    while($row = $query->fetch(PDO::FETCH_ASSOC)){
                         $id = $row["id"];
                         $name = $row["name"];
-                        $html.= "<option value='$id'> $name</option>";  //retriving the list from database.
+                        $html .= "<option value='" . (int)$id . "'>" . h($name) . "</option>";
                     }
                 $html.= "</select>
                     </div>"; 

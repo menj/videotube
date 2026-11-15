@@ -1,109 +1,106 @@
-function postComment(button, postedBy, videoId, replyTo, containerClass) {
-    let textarea = $(button).siblings("textarea");
-    let commentText = textarea.val();
+(function () {
+    const icons = 'assets/images/icons/';
 
-    if (commentText && commentText.trim()) {
-        $(button).prop("disabled", true);
-        $.post("ajax/postComment.php", {
-                commentText: commentText,
-                postedBy: postedBy,
-                videoId: videoId,
-                responseTo: replyTo
-            })
+    function adjustCommentCount(change) {
+        const counter = $('.commentSection .commentCount');
+        const total = Math.max(0, (parseInt(counter.text(), 10) || 0) + change);
+        counter.text(total + ' comments');
+    }
+
+    VideoTube.actions.postComment = function (button, data) {
+        if (!VideoTube.requireMember()) {
+            return;
+        }
+        const textarea = button.siblings('textarea');
+        const commentText = textarea.val();
+        if (!commentText || !commentText.trim()) {
+            alert("You can't post an empty comment");
+            return;
+        }
+        button.prop('disabled', true);
+        $.post('ajax/postComment.php', { commentText: commentText, videoId: data.videoId, responseTo: data.replyTo })
             .done(function (comment) {
-                if (textarea.val() === commentText) textarea.val("");
-                if(!replyTo) {
-                    $("." + containerClass).prepend(comment);
+                if (textarea.val() === commentText) {
+                    textarea.val('');
                 }
-                else {
-                    // A reply written under another reply belongs to the enclosing thread.
-                    let item = $(button).closest(".itemContainer");
-                    let thread = item.parent().closest("." + containerClass);
-                    let target = thread.length ? thread : item.children("." + containerClass);
-                    if (target.hasClass("viewReplies")) {
-                        target.click(); // Collapsed thread: load it, including the new reply.
-                    } else {
-                        target.append(comment);
-                    }
-                    item.find(".commentForm").first().addClass("hidden");
+                adjustCommentCount(1);
+                if (!data.replyTo) {
+                    $('.commentSection .comments').prepend(comment);
+                    return;
                 }
-            }).always(function () { $(button).prop("disabled", false); });
-    } else {
-        alert("You can't post an empty comment");
+                // A reply written under another reply belongs to the enclosing thread.
+                const item = button.closest('.itemContainer');
+                const thread = item.parent().closest('.repliesSection');
+                const target = thread.length ? thread : item.children('.repliesSection');
+                item.children('.commentForm').addClass('hidden');
+                if (target.hasClass('viewReplies')) {
+                    target.trigger('click'); // Collapsed thread: load it, including the new reply.
+                } else {
+                    target.append(comment);
+                }
+            })
+            .always(function () {
+                button.prop('disabled', false);
+            });
+    };
+
+    VideoTube.actions.toggleReply = function (button) {
+        if (!VideoTube.requireMember()) {
+            return;
+        }
+        button.closest('.itemContainer').children('.commentForm').toggleClass('hidden');
+    };
+
+    function vote(endpoint, ownIcon, otherIcon, other, direction) {
+        return function (button, data) {
+            if (!VideoTube.requireMember()) {
+                return;
+            }
+            $.post('ajax/' + endpoint, { commentId: data.commentId, videoId: data.videoId }).done(function (change) {
+                change = parseInt(change, 10) || 0;
+                const otherButton = button.siblings(other);
+                const count = button.siblings('.likesCount');
+                const score = (parseInt(count.text(), 10) || 0) + change;
+                count.text(score === 0 ? '' : score);
+
+                // The score moves in the vote's own direction when it is set, and back when it is withdrawn.
+                const active = change * direction > 0;
+                button.toggleClass('active', active);
+                button.find('img:first').attr('src', icons + ownIcon + (active ? '-active' : '') + '.png');
+                otherButton.removeClass('active');
+                otherButton.find('img:first').attr('src', icons + otherIcon + '.png');
+            });
+        };
     }
-}
 
+    VideoTube.actions.likeComment = vote('likeComment.php', 'thumb-up', 'thumb-down', '.disLikeButton', 1);
+    VideoTube.actions.dislikeComment = vote('disLikeComment.php', 'thumb-down', 'thumb-up', '.likeButton', -1);
 
-function toggleReply(button) {
-    let parent = $(button).closest(".itemContainer");
-    let commentForm = parent.find(".commentForm").first();
+    VideoTube.actions.getReplies = function (link, data) {
+        $.post('ajax/getCommentReplies.php', { commentId: data.commentId, videoId: data.videoId }).done(function (comments) {
+            link.replaceWith($('<div>').addClass('repliesSection').append(comments));
+        });
+    };
 
-    commentForm.toggleClass("hidden");
-}
+    VideoTube.actions.loadComments = function (button, data) {
+        button.prop('disabled', true);
+        $.post('ajax/getComments.php', { videoId: data.videoId, before: data.before })
+            .done(function (comments) {
+                button.replaceWith(comments);
+            })
+            .fail(function () {
+                button.prop('disabled', false);
+            });
+    };
 
-function likeComment(commentId, button, videoId){
-       $.post("ajax/likeComment.php",{ commentId: commentId ,videoId:videoId})
-       .done(function(numToChange){
-       
-       let likeButton = $(button);
-       let disLikeButton = $(button).siblings(".disLikeButton");
-
-       likeButton.addClass("active");
-       disLikeButton.removeClass("active");
-       
-       let likesCount = $(button).siblings(".likesCount");
-   
-         updateLikeValue(likesCount, numToChange);
-       
-       if(numToChange < 0){
-           likeButton.removeClass("active");
-           likeButton.find("img:first").attr("src","assets/images/icons/thumb-up.png");
-       }else{
-           likeButton.find("img:first").attr("src","assets/images/icons/thumb-up-active.png");
-       }
-           disLikeButton.find("img:first").attr("src","assets/images/icons/thumb-down.png");
-
-    });
-}
-
-function disLikeComment(commentId, button, videoId){
-    $.post("ajax/disLikeComment.php",{ commentId: commentId ,videoId:videoId})
-    .done(function(numToChange){
-    
-    let disLikeButton = $(button);
-    let likeButton = $(button).siblings(".likeButton");
-
-    disLikeButton.addClass("active");
-    likeButton.removeClass("active");
-    
-    let likesCount = $(button).siblings(".likesCount");
-
-      updateLikeValue(likesCount, numToChange);
-    
-    if(numToChange > 0){
-        disLikeButton.removeClass("active");
-        disLikeButton.find("img:first").attr("src","assets/images/icons/thumb-down.png");
-    }else{
-        disLikeButton.find("img:first").attr("src","assets/images/icons/thumb-down-active.png");
-    }
-        likeButton.find("img:first").attr("src","assets/images/icons/thumb-up.png");
-
- });
-}
-
-
-
-function updateLikeValue(element, num){
-    let likesCountVal = element.text() || 0;
-    element.text(parseInt(likesCountVal) + parseInt(num));
-}
-
-function getReplies(commentId, button, videoId) {
-    $.post("ajax/getCommentReplies.php", { commentId: commentId, videoId: videoId })
-    .done(function(comments) {
-        var replies = $("<div>").addClass("repliesSection");
-        replies.append(comments);
-
-        $(button).replaceWith(replies);
-    });
-}
+    VideoTube.actions.deleteComment = function (button, data) {
+        if (!confirm('Delete this comment and its replies?')) {
+            return;
+        }
+        $.post('ajax/deleteComment.php', { commentId: data.commentId, videoId: data.videoId }).done(function () {
+            const item = button.closest('.itemContainer');
+            adjustCommentCount(-1 - item.find('.itemContainer').length);
+            item.remove();
+        });
+    };
+})();

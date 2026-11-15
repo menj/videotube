@@ -1,7 +1,5 @@
 <?php
 require 'includes/config.php';
-require 'includes/classes/VideoUploadData.php';
-require 'includes/UploadQueue.php';
 $username=requireVerified($conn);
 if ($_SERVER['REQUEST_METHOD']!=='POST') { http_response_code(405); exit; }
 $data=new VideoUploadData($_FILES['fileInput'] ?? [],inputText('titleInput',$_POST),inputText('descriptionInput',$_POST),

@@ -26,7 +26,7 @@ class Client:
   request=urllib.request.Request('http://127.0.0.1:8089/'+path,data=data,headers=headers or {})
   try: response=self.opener.open(request,timeout=150)
   except urllib.error.HTTPError as e: response=e
-  body=response.read(); assert response.status==expect,(path,response.status,body[:300]); return body
+  body=response.read(); assert response.status==expect,(path,response.status,body[:300]); self.headers=response.headers; return body
  def page(self,path):
   body=self.request(path).decode(); match=re.search(r'name="csrf" value="([a-f0-9]+)"',body) or re.search(r'name="csrf-token" content="([a-f0-9]+)"',body)
   if match: self.csrf=match[1]
@@ -78,6 +78,14 @@ try:
  assert '<script>bad()</script>' not in guest.page('watch.php?id=1')
  owner.post('ajax/postComment.php',dict(videoId=1,postedBy='impersonated',responseTo=0,commentText='<script>comment()</script>'))
  body=guest.page('watch.php?id=1');assert '<script>comment()</script>' not in body and '&lt;script&gt;comment()' in body
+ # Pages carry a strict policy and no inline script or style for it to block.
+ assert "script-src 'self'" in guest.headers['Content-Security-Policy'] and 'unsafe-inline' not in guest.headers['Content-Security-Policy']
+ assert not re.search(r'\son[a-z]+\s*=|<script(?![^>]*\ssrc=)|\sstyle\s*=|<style',body), 'inline script or style in watch page'
+ # A reply written under a reply is addressed to the thread's top-level comment.
+ reply=owner.post('ajax/postComment.php',dict(videoId=1,responseTo=1,commentText='First reply')).decode()
+ assert 'data-reply-to="1"' in reply and 'data-comment-id="2"' in reply
+ owner.post('ajax/postComment.php',dict(videoId=1,responseTo=2,commentText='Nested'),expect=422)
+ assert 'First reply' in owner.post('ajax/getCommentReplies.php',dict(videoId=1,commentId=1)).decode()
  assert json.loads(owner.post('ajax/disLikeVideo.php',dict(videoId=1)))['disLikes']==1
  assert json.loads(owner.post('ajax/disLikeVideo.php',dict(videoId=1)))['disLikes']==-1
  owner.post('ajax/likeComment.php',dict(videoId=1,commentId=1))
@@ -106,6 +114,18 @@ try:
  other.page('signIn.php');other.post('signIn.php',dict(submitButton=1,username='other',password='reset!Password123'));other.page('index.php')
  other.request('admin.php',expect=403)
  owner.page('signIn.php');owner.post('signIn.php',dict(submitButton=1,username='owner',password='changed!Password123'));owner.page('admin.php')
+ # Comments load a page at a time; only the author may delete one, and its replies go with it.
+ for n in range(22): other.post('ajax/postComment.php',dict(videoId=1,responseTo=0,commentText='Paged %02d'%n))
+ first=guest.page('watch.php?id=1');assert first.count('class="itemContainer"')==20 and 'data-action="loadComments"' in first and 'Paged 21' in first and 'Paged 01' not in first
+ before=re.search(r'data-before="(\d+)"',first)[1]
+ rest=guest.post('ajax/getComments.php',dict(videoId=1,before=before)).decode();assert 'Paged 01' in rest and 'loadComments' not in rest
+ owner_page=owner.page('watch.php?id=1')
+ other_comment=re.search(r'data-comment-id="(\d+)"',first)[1]
+ assert 'data-action="deleteComment"' not in owner_page.split('First reply')[0].split('data-comment-id="%s"'%other_comment)[1].split('itemContainer')[0]
+ owner.post('ajax/deleteComment.php',dict(videoId=1,commentId=other_comment),expect=403)
+ other.post('ajax/deleteComment.php',dict(videoId=1,commentId=other_comment))
+ assert 'Paged 21' not in guest.page('watch.php?id=1')
+ owner.page('admin.php')
  owner.post('admin.php',dict(action='suspend',id=1),expect=422)
  owner.post('admin.php',dict(action='suspend',id=2));owner.post('admin.php',dict(action='restore',id=2))
  other.post('ajax/likeVideo.php',dict(videoId=1),expect=403)

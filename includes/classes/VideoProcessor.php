@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/../media.php';
 final class VideoProcessor {
     private PDO $conn;
     private const SIZE_LIMIT = 50000000;

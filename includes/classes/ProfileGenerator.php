@@ -1,5 +1,4 @@
 <?php
-require_once("includes/classes/ProfileData.php");
 class ProfileGenerator {
 
     private $conn, $userLoggedInObj, $profileData;

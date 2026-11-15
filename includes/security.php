@@ -45,6 +45,10 @@ function applicationSecurity(): void {
     if (!secureTransport() && !localRequest()) { http_response_code(400); exit('HTTPS is required.'); }
     header('X-Content-Type-Options: nosniff'); header('Referrer-Policy: strict-origin-when-cross-origin');
     header('X-Frame-Options: SAMEORIGIN');
+    // Pages load nothing from other origins and contain no inline script or style.
+    header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+        . "media-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; "
+        . "form-action 'self'; frame-ancestors 'self'");
     if (secureTransport()) header('Strict-Transport-Security: max-age=31536000');
     if (session_status() !== PHP_SESSION_ACTIVE) session_start(['use_strict_mode'=>true,'cookie_httponly'=>true,'cookie_secure'=>secureTransport(),'cookie_samesite'=>'Lax']);
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {

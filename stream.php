@@ -1,7 +1,5 @@
 <?php
 require_once 'includes/config.php';
-require_once 'includes/classes/Video.php';
-require_once 'includes/classes/MediaRange.php';
 if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)) {
     http_response_code(405); header('Allow: GET, HEAD'); exit;
 }

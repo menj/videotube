@@ -815,3 +815,11 @@ form {
   margin-right: auto;
 }
 .videoGridItem .description { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* The side navigation starts closed; the menu button toggles it. */
+#sideNavContainer { display: none; }
+#sideNavContainer.open { display: flex; }
+
+.itemContainer .controls .deleteComment { color: #a33; }
+.commentSection .loadMoreComments { display: block; margin: 8px auto 24px; }
+.pager { display: flex; justify-content: center; gap: 24px; padding: 16px 0 32px; }

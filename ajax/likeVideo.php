@@ -1,16 +1,5 @@
 <?php
-require_once __DIR__ . '/../includes/ajax.php'; 
-    require_once("../includes/config.php");
-    require_once("../includes/classes/User.php");
-    require_once("../includes/classes/Video.php");
+require_once __DIR__ . '/../includes/ajax.php';
 
-    
-        $videoId = $_POST["videoId"]; 
-        $username = ($_SESSION["userLoggedIn"] ?? "");
-
-        $userLoggedInObj = new User($conn, $username);
-
-        $video = new Video($conn, $videoId, $userLoggedInObj);
-        echo $video->like();
-if ($conn->inTransaction()) $conn->commit();
-?>
+echo $video->like();
+$conn->commit();

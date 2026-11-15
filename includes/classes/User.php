@@ -18,6 +18,20 @@ class User {
       
     }
 
+    public function isAdmin(): bool {
+        return ($this->sqlData["role"] ?? '') === 'admin' && empty($this->sqlData["suspended"]);
+    }
+
+    public function isVerified(): bool {
+        return !empty($this->sqlData["emailVerifiedAt"]);
+    }
+
+    /** "guest", "unverified" or "member": tells the page scripts what the viewer may do. */
+    public function viewerState(): string {
+        if ($this->getUsername() === '') return 'guest';
+        return $this->isVerified() ? 'member' : 'unverified';
+    }
+
     public static function isLoggedIn() {
         return isset($_SESSION["userLoggedIn"]);
     }

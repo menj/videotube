@@ -1,6 +1,4 @@
-<?php require_once('includes/header.php');
-      require_once('includes/classes/VideoDetailsFormProvider.php');
-?>
+<?php require_once('includes/header.php'); ?>
 
 <div class="column">
    <?php
@@ -9,12 +7,7 @@
 
    ?>
 </div>
-<script>
-  $("form").submit(function(){
-      $("#modalLoader").modal("show");
-  })
-  
-</script>
+
 
 <!-- Modal -->
 <div class="modal fade" id="modalLoader" tabindex="-1" role="dialog" aria-labelledby="modalLoader" aria-hidden="true" data-backdrop="static" data-keyboard="false">
@@ -22,7 +15,7 @@
     <div class="modal-content">
       <div class="modal-body">
          Please wait. This might take a while...
-         <img src = "./assets/images/icons/loading-spinner.gif">
+         <img src="./assets/images/icons/loading-spinner.gif" alt="">
       </div>
     </div>
   </div>
