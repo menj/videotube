@@ -28,9 +28,6 @@ jobs:
         run: composer test
   style:
     runs-on: ubuntu-latest
-    # Formatted and checked with PHP_CodeSniffer 3.7 while this job was written; a newer 3.x may
-    # flag more. Remove continue-on-error once this job has passed here.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
