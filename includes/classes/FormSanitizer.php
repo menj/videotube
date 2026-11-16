@@ -1,15 +1,21 @@
 <?php
-class FormSanitizer {
-    public static function sanitizingFormString($value): string {
+
+class FormSanitizer
+{
+    public static function sanitizingFormString($value): string
+    {
         return is_string($value) ? trim($value) : '';
     }
-    public static function sanitizingFormUser($value): string {
+    public static function sanitizingFormUser($value): string
+    {
         return is_string($value) ? trim($value) : '';
     }
-    public static function sanitizingFormEmail($value): string {
+    public static function sanitizingFormEmail($value): string
+    {
         return is_string($value) ? trim($value) : '';
     }
-    public static function sanitizingFormPassword($value): string {
+    public static function sanitizingFormPassword($value): string
+    {
         return is_string($value) ? $value : '';
     }
 }

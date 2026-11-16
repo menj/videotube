@@ -1,4 +1,5 @@
 <?php
+
 require_once __DIR__ . '/../includes/ajax.php';
 
 // Authors may delete their own comments; replies to it go with it.

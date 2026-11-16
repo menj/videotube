@@ -56,25 +56,29 @@ $actionsFor = static fn(array $row): array => match ($section) {
 <h1>Administration</h1>
 <nav>
     <a href="index.php">Home</a>
-    <?php foreach (array_keys($sections) as $tab): ?>
+    <?php foreach (array_keys($sections) as $tab) : ?>
     <a href="?section=<?= h($tab) ?>"<?= $tab === $section ? ' aria-current="page"' : '' ?>><?= h(ucfirst($tab)) ?></a>
     <?php endforeach; ?>
 </nav>
 <p role="status"><?= h($message) ?></p>
 <p>Content removal is permanent in the database. Stored media remains protected until <code>bin/cleanup.php</code> purges it.</p>
 <table>
-<?php if ($rows): ?>
+<?php if ($rows) : ?>
     <thead><tr>
-        <?php foreach (array_keys($rows[0]) as $key): ?><th><?= h($key) ?></th><?php endforeach; ?>
+        <?php foreach (array_keys($rows[0]) as $key) :
+            ?><th><?= h($key) ?></th><?php
+        endforeach; ?>
         <th>Actions</th>
     </tr></thead>
 <?php endif; ?>
     <tbody>
-    <?php foreach ($rows as $row): ?>
+    <?php foreach ($rows as $row) : ?>
     <tr>
-        <?php foreach ($row as $value): ?><td><?= h($value) ?></td><?php endforeach; ?>
+        <?php foreach ($row as $value) :
+            ?><td><?= h($value) ?></td><?php
+        endforeach; ?>
         <td>
-        <?php foreach ($actionsFor($row) as $action): ?>
+        <?php foreach ($actionsFor($row) as $action) : ?>
             <form method="post" data-confirm="Confirm this action?">
                 <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                 <button name="action" value="<?= h($action) ?>"><?= h(ucwords(str_replace('_', ' ', $action))) ?></button>
@@ -85,10 +89,16 @@ $actionsFor = static fn(array $row): array => match ($section) {
     <?php endforeach; ?>
     </tbody>
 </table>
-<?php if (!$rows): ?><p>Nothing to show.</p><?php endif; ?>
+<?php if (!$rows) :
+    ?><p>Nothing to show.</p><?php
+endif; ?>
 <p>
-    <?php if ($page > 1): ?><a href="?section=<?= h($section) ?>&amp;page=<?= $page - 1 ?>">Previous</a><?php endif; ?>
-    <?php if ($hasNext): ?><a href="?section=<?= h($section) ?>&amp;page=<?= $page + 1 ?>">Next</a><?php endif; ?>
+    <?php if ($page > 1) :
+        ?><a href="?section=<?= h($section) ?>&amp;page=<?= $page - 1 ?>">Previous</a><?php
+    endif; ?>
+    <?php if ($hasNext) :
+        ?><a href="?section=<?= h($section) ?>&amp;page=<?= $page + 1 ?>">Next</a><?php
+    endif; ?>
 </p>
 </body>
 </html>

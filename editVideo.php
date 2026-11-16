@@ -64,7 +64,9 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 <div class="column editVideo">
     <h1>Edit video</h1>
-    <?php if ($message !== ''): ?><p class="alert alert-danger" role="alert"><?= h($message) ?></p><?php endif; ?>
+    <?php if ($message !== '') :
+        ?><p class="alert alert-danger" role="alert"><?= h($message) ?></p><?php
+    endif; ?>
     <form method="post">
         <div class="form-group">
             <label for="editTitle">Title</label>
@@ -84,15 +86,15 @@ require_once __DIR__ . '/includes/header.php';
         <div class="form-group">
             <label for="editCategory">Category</label>
             <select class="form-control" id="editCategory" name="category">
-                <?php foreach ($categories as $category): ?>
+                <?php foreach ($categories as $category) : ?>
                 <option value="<?= (int)$category['id'] ?>" <?= $category['id'] == $row['category'] ? 'selected' : '' ?>><?= h($category['name']) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <?php if (count($thumbnails) > 1): ?>
+        <?php if (count($thumbnails) > 1) : ?>
         <fieldset class="form-group thumbnailChoices">
             <legend>Thumbnail</legend>
-            <?php foreach ($thumbnails as $thumbnail): ?>
+            <?php foreach ($thumbnails as $thumbnail) : ?>
             <label>
                 <input type="radio" name="thumbnail" value="<?= (int)$thumbnail['id'] ?>" <?= $thumbnail['selected'] ? 'checked' : '' ?>>
                 <img src="thumbnail.php?id=<?= $id ?>&amp;thumbnail=<?= (int)$thumbnail['id'] ?>" alt="Thumbnail option">

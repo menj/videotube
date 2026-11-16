@@ -1,4 +1,5 @@
 <?php
+
 // Media requests only read the session, so they must not hold its lock while the file is sent.
 const VIDEOTUBE_SESSION_READONLY = true;
 require_once __DIR__ . '/includes/config.php';

@@ -1,22 +1,27 @@
 <?php
-class Account {
 
+class Account
+{
     private $conn;
     private $errorArray = array();
 
-    public function __construct($conn) {
+    public function __construct($conn)
+    {
         $this->conn = $conn;
     }
 
-    public function login($un, $pw) {
+    public function login($un, $pw)
+    {
         $query = $this->conn->prepare('SELECT password FROM users WHERE username=? AND suspended=0');
         $query->execute([$un]);
         $stored = $query->fetchColumn();
-        if (is_string($stored) && (password_verify($pw,$stored)
-            || (preg_match('/^[a-f0-9]{128}$/D',$stored) && hash_equals($stored,hash('sha512',$pw))))) {
-            if (password_needs_rehash($stored,PASSWORD_DEFAULT)) {
-                $q=$this->conn->prepare('UPDATE users SET password=? WHERE username=?');
-                $q->execute([password_hash($pw,PASSWORD_DEFAULT),$un]);
+        if (
+            is_string($stored) && (password_verify($pw, $stored)
+            || (preg_match('/^[a-f0-9]{128}$/D', $stored) && hash_equals($stored, hash('sha512', $pw))))
+        ) {
+            if (password_needs_rehash($stored, PASSWORD_DEFAULT)) {
+                $q = $this->conn->prepare('UPDATE users SET password=? WHERE username=?');
+                $q->execute([password_hash($pw, PASSWORD_DEFAULT),$un]);
             }
             return true;
         }
@@ -24,30 +29,32 @@ class Account {
         return false;
     }
 
-    public function register($fn, $ln, $un, $em, $em2, $pw, $pw2) {
+    public function register($fn, $ln, $un, $em, $em2, $pw, $pw2)
+    {
         $this->validateFirstName($fn);
         $this->validateLastName($ln);
         $this->validateUsername($un);
         $this->validateEmails($em, $em2);
         $this->validatePasswords($pw, $pw2);
 
-        if(empty($this->errorArray)) {
+        if (empty($this->errorArray)) {
             return $this->insertUserDetails($fn, $ln, $un, $em, $pw);
-        }
-        else {
+        } else {
             return false;
         }
     }
 
     /** @return string|null the previous address when the email changed, otherwise null */
-    public function emailChange($em, $un): ?string {
+    public function emailChange($em, $un): ?string
+    {
         $query = $this->conn->prepare('SELECT email FROM users WHERE username=?');
         $query->execute([$un]);
         $current = $query->fetchColumn();
         return is_string($current) && $current !== $em ? $current : null;
     }
 
-    public function updateDetails($fn, $ln, $em, $un, $currentPassword = '') {
+    public function updateDetails($fn, $ln, $em, $un, $currentPassword = '')
+    {
         $this->validateFirstName($fn);
         $this->validateLastName($ln);
         $this->validateNewEmail($em, $un);
@@ -56,7 +63,7 @@ class Account {
             $this->errorArray[] = Constants::$passwordRequiredForEmail;
         }
 
-        if(empty($this->errorArray)) {
+        if (empty($this->errorArray)) {
             $query = $this->conn->prepare("UPDATE users SET firstName=:fn, lastName=:ln, emailVerifiedAt=IF(BINARY email=BINARY :checkEmail,emailVerifiedAt,NULL), email=:em WHERE username=:un");
             $query->bindParam(":fn", $fn);
             $query->bindParam(":ln", $ln);
@@ -65,45 +72,47 @@ class Account {
             $query->bindParam(":un", $un);
 
             return $query->execute();
-        }
-        else {
+        } else {
             return false;
         }
     }
 
-    public function updatePassword($oldPw, $pw, $pw2, $un) {
+    public function updatePassword($oldPw, $pw, $pw2, $un)
+    {
         $this->validateOldPassword($oldPw, $un);
         $this->validatePasswords($pw, $pw2);
 
-        if(empty($this->errorArray)) {
+        if (empty($this->errorArray)) {
             $query = $this->conn->prepare("UPDATE users SET password=:pw WHERE username=:un");
             $pw = password_hash($pw, PASSWORD_DEFAULT);
             $query->bindParam(":pw", $pw);
             $query->bindParam(":un", $un);
 
             return $query->execute();
-        }
-        else {
+        } else {
             return false;
         }
     }
 
-    public function passwordMatches($password, $un): bool {
+    public function passwordMatches($password, $un): bool
+    {
         $query = $this->conn->prepare('SELECT password FROM users WHERE username=? AND suspended=0');
         $query->execute([$un]);
         $stored = $query->fetchColumn();
-        return is_string($stored) && (password_verify($password,$stored)
-            || (preg_match('/^[a-f0-9]{128}$/D',$stored) && hash_equals($stored,hash('sha512',$password))));
+        return is_string($stored) && (password_verify($password, $stored)
+            || (preg_match('/^[a-f0-9]{128}$/D', $stored) && hash_equals($stored, hash('sha512', $password))));
     }
 
-    private function validateOldPassword($oldPw, $un) {
+    private function validateOldPassword($oldPw, $un)
+    {
         if (!$this->passwordMatches($oldPw, $un)) {
             $this->errorArray[] = Constants::$passwordIncorrect;
         }
     }
 
-    public function insertUserDetails($fn, $ln, $un, $em, $pw) {
-        
+    public function insertUserDetails($fn, $ln, $un, $em, $pw)
+    {
+
         $pw = password_hash($pw, PASSWORD_DEFAULT);
         $profilePic = "assets/images/profilePictures/default.png";
 
@@ -116,24 +125,27 @@ class Account {
         $query->bindParam(":em", $em);
         $query->bindParam(":pw", $pw);
         $query->bindParam(":pic", $profilePic);
-        
+
         return $query->execute();
     }
-    
-    private function validateFirstName($fn) {
-        if(strlen($fn) > 25 || strlen($fn) < 2) {
+
+    private function validateFirstName($fn)
+    {
+        if (strlen($fn) > 25 || strlen($fn) < 2) {
             array_push($this->errorArray, Constants::$firstNameCharacters);
         }
     }
 
-    private function validateLastName($ln) {
-        if(strlen($ln) > 25 || strlen($ln) < 2) {
+    private function validateLastName($ln)
+    {
+        if (strlen($ln) > 25 || strlen($ln) < 2) {
             array_push($this->errorArray, Constants::$lastNameCharacters);
         }
     }
 
-    private function validateUsername($un) {
-        if(!preg_match('/^[A-Za-z0-9_]{5,25}$/D',$un)) {
+    private function validateUsername($un)
+    {
+        if (!preg_match('/^[A-Za-z0-9_]{5,25}$/D', $un)) {
             array_push($this->errorArray, Constants::$usernameCharacters);
             return;
         }
@@ -142,19 +154,19 @@ class Account {
         $query->bindParam(":un", $un);
         $query->execute();
 
-        if($query->rowCount() != 0) {
+        if ($query->rowCount() != 0) {
             array_push($this->errorArray, Constants::$usernameTaken);
         }
-
     }
 
-    private function validateEmails($em, $em2) {
-        if($em != $em2) {
+    private function validateEmails($em, $em2)
+    {
+        if ($em != $em2) {
             array_push($this->errorArray, Constants::$emailsDoNotMatch);
             return;
         }
 
-        if(strlen($em)>191 || !filter_var($em, FILTER_VALIDATE_EMAIL)) {
+        if (strlen($em) > 191 || !filter_var($em, FILTER_VALIDATE_EMAIL)) {
             array_push($this->errorArray, Constants::$emailInvalid);
             return;
         }
@@ -163,15 +175,15 @@ class Account {
         $query->bindParam(":em", $em);
         $query->execute();
 
-        if($query->rowCount() != 0) {
+        if ($query->rowCount() != 0) {
             array_push($this->errorArray, Constants::$emailTaken);
         }
-
     }
 
-    private function validateNewEmail($em, $un) {
+    private function validateNewEmail($em, $un)
+    {
 
-        if(strlen($em)>191 || !filter_var($em, FILTER_VALIDATE_EMAIL)) {
+        if (strlen($em) > 191 || !filter_var($em, FILTER_VALIDATE_EMAIL)) {
             array_push($this->errorArray, Constants::$emailInvalid);
             return;
         }
@@ -181,35 +193,36 @@ class Account {
         $query->bindParam(":un", $un);
         $query->execute();
 
-        if($query->rowCount() != 0) {
+        if ($query->rowCount() != 0) {
             array_push($this->errorArray, Constants::$emailTaken);
         }
-
     }
 
-    private function validatePasswords($pw, $pw2) {
-        if($pw != $pw2) {
+    private function validatePasswords($pw, $pw2)
+    {
+        if ($pw != $pw2) {
             array_push($this->errorArray, Constants::$passwordDoNotMatch);
             return;
         }
 
-        if(strlen($pw) > 72 || strlen($pw) < 12 || str_contains($pw, "\0")) $this->errorArray[] = Constants::$passwordLength;
+        if (strlen($pw) > 72 || strlen($pw) < 12 || str_contains($pw, "\0")) {
+            $this->errorArray[] = Constants::$passwordLength;
+        }
     }
 
-    public function getError($error) {
-        if(in_array($error, $this->errorArray)) {
+    public function getError($error)
+    {
+        if (in_array($error, $this->errorArray)) {
             return "<span class='errorMessage'>$error</span>";
         }
     }
 
-    public function getFirstError() {
-        if(!empty($this->errorArray)) {
+    public function getFirstError()
+    {
+        if (!empty($this->errorArray)) {
             return $this->errorArray[0];
-        }
-        else {
+        } else {
             return "";
         }
     }
-
 }
-?>

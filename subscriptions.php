@@ -1,7 +1,7 @@
 <?php
 require_once("includes/header.php");
 
-if(!User::isLoggedIn()) {
+if (!User::isLoggedIn()) {
     header("Location: signIn.php");
     exit;
 }
@@ -13,10 +13,9 @@ $videoGrid = new VideoGrid($conn, $userLoggedInObj);
 ?>
 <div class="largeVideoGridContainer">
     <?php
-    if(sizeof($videos) > 0) {
+    if (sizeof($videos) > 0) {
         echo $videoGrid->createLarge($videos, "New from your subscriptions", false);
-    }
-    else {
+    } else {
         echo "No videos to show";
     }
     ?>

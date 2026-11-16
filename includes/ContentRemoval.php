@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Deletes content together with everything that hangs off it. Callers own the transaction.
  * Media files stay in storage; bin/cleanup.php removes files nothing refers to any more.

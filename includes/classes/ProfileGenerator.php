@@ -1,18 +1,23 @@
 <?php
-class ProfileGenerator {
 
-    private $conn, $userLoggedInObj, $profileData;
+class ProfileGenerator
+{
+    private $conn;
+    private $userLoggedInObj;
+    private $profileData;
 
-    public function __construct($conn, $userLoggedInObj, $profileUsername) {
+    public function __construct($conn, $userLoggedInObj, $profileUsername)
+    {
         $this->conn = $conn;
         $this->userLoggedInObj = $userLoggedInObj;
         $this->profileData = new ProfileData($conn, $profileUsername);
     }
 
-    public function create() {
+    public function create()
+    {
         $profileUsername = $this->profileData->getProfileUsername();
 
-        if(!$this->profileData->userExists()) {
+        if (!$this->profileData->userExists()) {
             return "User does not exist";
         }
         $coverPhotoSection = $this->createCoverPhotoSection();
@@ -27,18 +32,20 @@ class ProfileGenerator {
                 </div>";
     }
 
-    public function createCoverPhotoSection() {
+    public function createCoverPhotoSection()
+    {
         $coverPhotoSrc = $this->profileData->getCoverPhoto();
-        $name = htmlspecialchars($this->profileData->getProfileUserFullName(),ENT_QUOTES,'UTF-8');
+        $name = htmlspecialchars($this->profileData->getProfileUserFullName(), ENT_QUOTES, 'UTF-8');
         return "<div class='coverPhotoContainer'>
                     <img src='$coverPhotoSrc' class='coverPhoto'>
                     <span class='channelName'>$name</span>
                 </div>";
     }
 
-       public function createHeaderSection() {
+    public function createHeaderSection()
+    {
         $profileImage = h($this->profileData->getProfilePic());
-        $name = htmlspecialchars($this->profileData->getProfileUserFullName(),ENT_QUOTES,'UTF-8');
+        $name = htmlspecialchars($this->profileData->getProfileUserFullName(), ENT_QUOTES, 'UTF-8');
         $subCount = $this->profileData->getSubscriberCount();
 
         $button = $this->createHeaderButton();
@@ -60,7 +67,8 @@ class ProfileGenerator {
                 </div>";
     }
 
-    public function createTabsSection() {
+    public function createTabsSection()
+    {
         return "<ul class='nav nav-tabs' role='tablist'>
                     <li class='nav-item'>
                     <a class='nav-link active' id='videos-tab' data-toggle='tab' 
@@ -73,22 +81,22 @@ class ProfileGenerator {
                 </ul>";
     }
 
-    public function createContentSection() {
+    public function createContentSection()
+    {
 
         $page = Pager::current();
         $videos = $this->profileData->getUsersVideos($page);
         $hasNext = count($videos) > Pager::PAGE_SIZE;
         $videos = array_slice($videos, 0, Pager::PAGE_SIZE);
 
-        if(sizeof($videos) > 0) {
+        if (sizeof($videos) > 0) {
             $videoGrid = new VideoGrid($this->conn, $this->userLoggedInObj);
             $videoGridHtml = $videoGrid->create($videos, null, false)
                 . Pager::links('profile.php', ['username' => $this->profileData->getProfileUsername()], $page, $hasNext);
-        }
-        else {
+        } else {
             $videoGridHtml = "<span>This user has no videos</span>";
         }
-         
+
         $aboutSection = $this->createAboutSection();
 
         return "<div class='tab-content channelContent'>
@@ -101,18 +109,20 @@ class ProfileGenerator {
                 </div>";
     }
 
-    private function createHeaderButton() {
-        if($this->userLoggedInObj->getUsername() == $this->profileData->getProfileUsername()) {
+    private function createHeaderButton()
+    {
+        if ($this->userLoggedInObj->getUsername() == $this->profileData->getProfileUsername()) {
             return "";
-        }
-        else {
+        } else {
             return ButtonProvider::createSubscriberButton(
-                        $this->conn, 
-                        $this->profileData->getProfileUserObj(),
-                        $this->userLoggedInObj);
+                $this->conn,
+                $this->profileData->getProfileUserObj(),
+                $this->userLoggedInObj
+            );
         }
     }
-    private function createAboutSection() {
+    private function createAboutSection()
+    {
         $html = "<div class='section'>
                     <div class='title'>
                         <span>Details</span>
@@ -120,8 +130,8 @@ class ProfileGenerator {
                     <div class='values'>";
 
         $details = $this->profileData->getAllUserDetails();
-        foreach($details as $key => $value) {
-            $value = htmlspecialchars((string)$value,ENT_QUOTES,'UTF-8');
+        foreach ($details as $key => $value) {
+            $value = htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
             $html .= "<span>$key: $value</span>";
         }
 
@@ -130,4 +140,3 @@ class ProfileGenerator {
         return $html;
     }
 }
-?>

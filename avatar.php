@@ -1,4 +1,5 @@
 <?php
+
 // Profile pictures are public; the request needs no session lock.
 const VIDEOTUBE_SESSION_READONLY = true;
 require_once __DIR__ . '/includes/config.php';

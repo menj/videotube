@@ -1,22 +1,29 @@
 <?php
-class ProfileData {
-    
-    private $conn, $profileUserObj, $profileData;
 
-    public function __construct($conn, $profileUsername) {
+class ProfileData
+{
+    private $conn;
+    private $profileUserObj;
+    private $profileData;
+
+    public function __construct($conn, $profileUsername)
+    {
         $this->conn = $conn;
         $this->profileUserObj = new User($conn, $profileUsername);
     }
-  
-    public function getProfileUserObj() {
+
+    public function getProfileUserObj()
+    {
         return $this->profileUserObj;
     }
 
-    public function getProfileUsername() {
+    public function getProfileUsername()
+    {
         return $this->profileUserObj->getUsername();
     }
 
-    public function userExists() {
+    public function userExists()
+    {
         $query = $this->conn->prepare("SELECT * FROM users WHERE username = :username");
         $query->bindParam(":username", $profileUsername);
         $profileUsername = $this->getProfileUsername();
@@ -25,26 +32,31 @@ class ProfileData {
         return $query->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
-    public function getCoverPhoto() {
+    public function getCoverPhoto()
+    {
         return "assets/images/coverPhotos/default-cover-photo.jpg";
     }
 
 
-    public function getProfileUserFullName() {
+    public function getProfileUserFullName()
+    {
         return $this->profileUserObj->getName();
     }
 
 
-    public function getProfilePic() {
+    public function getProfilePic()
+    {
         return $this->profileUserObj->getUserProfilePic();
     }
 
-    public function getSubscriberCount() {
+    public function getSubscriberCount()
+    {
         return $this->profileUserObj->getSubscriberCount();
     }
 
     /** One page of the channel's videos, plus one extra row when a further page exists. */
-    public function getUsersVideos(int $page = 1) {
+    public function getUsersVideos(int $page = 1)
+    {
         $visibility = ($_SESSION['userLoggedIn'] ?? '') === $this->getProfileUsername() ? '' : 'privacy=1 AND ';
         $query = $this->conn->prepare("SELECT * FROM videos WHERE " . $visibility . "uploadedBy=:uploadedBy ORDER BY uploadDate DESC, id DESC LIMIT " . (Pager::PAGE_SIZE + 1) . " OFFSET " . Pager::offset($page));
         $query->bindParam(":uploadedBy", $username);
@@ -52,33 +64,35 @@ class ProfileData {
         $query->execute();
 
         $videos = array();
-        while($row = $query->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
             $videos[] = new Video($this->conn, $row, $this->profileUserObj);
         }
         return $videos;
-  }
-  public function getAllUserDetails() {
-    return array(
+    }
+    public function getAllUserDetails()
+    {
+        return array(
         "Name" => $this->getProfileUserFullName(),
         "Username" => $this->getProfileUsername(),
         "Subscribers" => $this->getSubscriberCount(),
         "Total views" => $this->getTotalViews(),
         "Sign up date" => $this->getSignUpDate()
-    );
-}
+        );
+    }
 
-private function getTotalViews() {
-    $query = $this->conn->prepare("SELECT sum(views) FROM videos WHERE uploadedBy=:uploadedBy");
-    $query->bindParam(":uploadedBy", $username);
-    $username = $this->getProfileUsername();
-    $query->execute();
+    private function getTotalViews()
+    {
+        $query = $this->conn->prepare("SELECT sum(views) FROM videos WHERE uploadedBy=:uploadedBy");
+        $query->bindParam(":uploadedBy", $username);
+        $username = $this->getProfileUsername();
+        $query->execute();
 
-    return $query->fetchColumn();
-}
+        return $query->fetchColumn();
+    }
 
-private function getSignUpDate() {
-    $date = $this->profileUserObj->getSignUpDate();
-    return date("F jS, Y", strtotime($date));
+    private function getSignUpDate()
+    {
+        $date = $this->profileUserObj->getSignUpDate();
+        return date("F jS, Y", strtotime($date));
+    }
 }
-}
-?>

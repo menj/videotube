@@ -1,4 +1,5 @@
 <?php
+
 require_once __DIR__ . '/../includes/ajax.php';
 
 // Toggles the viewer's subscription to a channel and answers with its new subscriber count.

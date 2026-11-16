@@ -47,30 +47,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main>
 <h1>Account help</h1>
 <p role="status"><?= h($message) ?></p>
-<?php if ($token !== ''): ?>
+<?php if ($token !== '') : ?>
 <form method="post">
     <input type="hidden" name="token" value="<?= h($token) ?>">
     <input type="hidden" name="purpose" value="<?= h($purpose) ?>">
-    <?php if ($purpose === 'reset'): ?>
+    <?php if ($purpose === 'reset') : ?>
     <label>New password (12–72 bytes)
         <input type="password" name="password" minlength="12" maxlength="72" autocomplete="new-password" required>
     </label>
     <?php endif; ?>
     <button>Confirm <?= $purpose === 'reset' ? 'password reset' : 'email verification' ?></button>
 </form>
-<?php else: ?>
+<?php else : ?>
 <form method="post">
     <h2>Reset password</h2>
     <label>Email <input type="email" name="email" required autocomplete="email"></label>
     <button name="action" value="reset">Send reset link</button>
 </form>
-<?php if (!empty($_SESSION['userLoggedIn'])): ?>
+    <?php if (!empty($_SESSION['userLoggedIn'])) : ?>
 <form method="post">
     <h2>Verify email</h2>
     <p>Verify your current email before posting or uploading.</p>
     <button name="action" value="verify">Send verification link</button>
 </form>
-<?php endif; ?>
+    <?php endif; ?>
 <?php endif; ?>
 <p><a href="signIn.php">Sign in</a> · <a href="index.php">Home</a></p>
 </main>

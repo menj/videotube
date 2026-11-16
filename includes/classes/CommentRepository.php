@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Loads comments together with everything needed to draw them (author picture, vote totals,
  * reply count, the viewer's own vote) in one query per page instead of several per comment.

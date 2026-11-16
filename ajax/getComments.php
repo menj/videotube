@@ -1,4 +1,5 @@
 <?php
+
 require_once __DIR__ . '/../includes/ajax.php';
 
 // Next page of top-level comments, older than the last one already shown.

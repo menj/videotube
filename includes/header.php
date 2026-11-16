@@ -52,9 +52,9 @@ $userLoggedInObj = new User($conn, $usernameLoggedIn);
         <!--main section area  -->
         <div id="mainSectionContainer">
             <div id="mainContentContainer">
-<?php if ($userLoggedInObj->viewerState() === 'unverified'): ?>
+<?php if ($userLoggedInObj->viewerState() === 'unverified') : ?>
                 <p class="alert alert-warning" role="status">Verify your email address to upload, comment, like and subscribe. <a href="account.php">Send me the link again</a></p>
 <?php endif; ?>
-<?php if (!empty($pageNotice)): ?>
+<?php if (!empty($pageNotice)) : ?>
                 <p class="alert alert-info" role="status"><?= h($pageNotice) ?></p>
 <?php endif; ?>

@@ -1,7 +1,9 @@
 <?php
-class SettingsFormProvider {
 
-    public function createUserDetailsForm($firstName, $lastName, $email) {
+class SettingsFormProvider
+{
+    public function createUserDetailsForm($firstName, $lastName, $email)
+    {
         $firstNameInput = $this->createFirstNameInput($firstName);
         $lastNameInput = $this->createLastNameInput($lastName);
         $emailInput = $this->createEmailInput($email);
@@ -19,7 +21,8 @@ class SettingsFormProvider {
                 </form>";
     }
 
-    public function createPictureForm($currentPicture) {
+    public function createPictureForm($currentPicture)
+    {
         $picture = h($currentPicture);
         return "<form action='settings.php' method='POST' enctype='multipart/form-data'>
                     <span class='title'>Profile picture</span>
@@ -33,7 +36,8 @@ class SettingsFormProvider {
                 </form>";
     }
 
-    public function createDeleteAccountForm() {
+    public function createDeleteAccountForm()
+    {
         return "<form action='settings.php' method='POST' data-confirm='Delete your account with all of your videos and comments? This cannot be undone.'>
                     <span class='title'>Delete account</span>
                     <p>Removes your channel, videos, comments, likes and subscriptions permanently.</p>
@@ -44,7 +48,8 @@ class SettingsFormProvider {
                 </form>";
     }
 
-    public function createPasswordForm() {
+    public function createPasswordForm()
+    {
         $oldPasswordInput = $this->createPasswordInput("oldPassword", "Old password");
         $newPassword1Input = $this->createPasswordInput("newPassword", "New password");
         $newPassword2Input = $this->createPasswordInput("newPassword2", "Confirm new password");
@@ -60,43 +65,54 @@ class SettingsFormProvider {
                 </form>";
     }
 
-    private function createFirstNameInput($value) {
-        $value = htmlspecialchars((string)$value,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-        if($value == null) $value = "";
+    private function createFirstNameInput($value)
+    {
+        $value = htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        if ($value == null) {
+            $value = "";
+        }
         return "<div class='form-group'>
                     <input class='form-control' type='text' placeholder='First name' name='firstName' value='$value' required>
                 </div>";
     }
 
-    private function createLastNameInput($value) {
-        $value = htmlspecialchars((string)$value,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-        if($value == null) $value = "";
+    private function createLastNameInput($value)
+    {
+        $value = htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        if ($value == null) {
+            $value = "";
+        }
         return "<div class='form-group'>
                     <input class='form-control' type='text' placeholder='Last name' name='lastName' value='$value' required>
                 </div>";
     }
 
-    private function createEmailInput($value) {
-        $value = htmlspecialchars((string)$value,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-        if($value == null) $value = "";
+    private function createEmailInput($value)
+    {
+        $value = htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        if ($value == null) {
+            $value = "";
+        }
         return "<div class='form-group'>
                     <input class='form-control' type='email' placeholder='Email' name='email' value='$value' required>
                 </div>";
     }
 
-    private function createSaveUserDetailsButton() {
+    private function createSaveUserDetailsButton()
+    {
         return "<button type='submit' class='btn btn-primary' name='saveDetailsButton'>Save</button>";
     }
 
-    private function createSavePasswordButton() {
+    private function createSavePasswordButton()
+    {
         return "<button type='submit' class='btn btn-primary' name='savePasswordButton'>Save</button>";
     }
 
-    private function createPasswordInput($name, $placeholder) {
-        
+    private function createPasswordInput($name, $placeholder)
+    {
+
         return "<div class='form-group'>
                     <input class='form-control' type='password' placeholder='$placeholder' name='$name' required>
                 </div>";
     }
 }
-?>

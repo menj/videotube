@@ -1,4 +1,5 @@
 <?php
+
 final class AccountRecovery
 {
     public function __construct(private PDO $db)

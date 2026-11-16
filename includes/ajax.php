@@ -1,4 +1,5 @@
 <?php
+
 // Shared entry checks for the POST endpoints in /ajax. Endpoints receive validated values in
 // $viewer, $viewerObj, $videoId, $video and $commentId instead of reading raw request input.
 require_once __DIR__ . '/config.php';

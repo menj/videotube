@@ -1,4 +1,5 @@
 <?php
+
 // Lists (and with --delete removes) stored media that no database record refers to.
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);

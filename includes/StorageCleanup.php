@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Finds media files that no database record refers to: leftovers of removed videos, deleted
  * accounts, replaced profile pictures and interrupted jobs.

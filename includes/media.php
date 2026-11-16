@@ -1,4 +1,5 @@
 <?php
+
 /** Settings written by the installer; empty before installation. */
 function localSettings(): array
 {

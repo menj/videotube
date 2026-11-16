@@ -1,74 +1,92 @@
-<?php 
+<?php
 
-
-class User {
-    private $conn, $sqlData;
+class User
+{
+    private $conn;
+    private $sqlData;
 
     /** @param string|array $username a username to look up, or an already loaded users row */
-    public function __construct($conn, $username){
+    public function __construct($conn, $username)
+    {
         $this->conn = $conn;
-        if (is_array($username)) { $this->sqlData = $username; return; }
+        if (is_array($username)) {
+            $this->sqlData = $username;
+            return;
+        }
 
         $query = $this->conn->prepare("SELECT * FROM users WHERE username = :un");
         $query->bindParam(":un", $username);
         $query->execute();
-   
+
         $this->sqlData = $query->fetch(PDO::FETCH_ASSOC) ?: [
             'username' => '', 'firstName' => '', 'lastName' => '', 'email' => '',
             'profilePic' => 'assets/images/profilePictures/default.png', 'singUpDate' => '',
         ];
-      
     }
 
-    public function isAdmin(): bool {
+    public function isAdmin(): bool
+    {
         return ($this->sqlData["role"] ?? '') === 'admin' && empty($this->sqlData["suspended"]);
     }
 
-    public function isVerified(): bool {
+    public function isVerified(): bool
+    {
         return !empty($this->sqlData["emailVerifiedAt"]);
     }
 
     /** "guest", "unverified" or "member": tells the page scripts what the viewer may do. */
-    public function viewerState(): string {
-        if ($this->getUsername() === '') return 'guest';
+    public function viewerState(): string
+    {
+        if ($this->getUsername() === '') {
+            return 'guest';
+        }
         return $this->isVerified() ? 'member' : 'unverified';
     }
 
-    public static function isLoggedIn() {
+    public static function isLoggedIn()
+    {
         return isset($_SESSION["userLoggedIn"]);
     }
 
-    public function getUsername(){
+    public function getUsername()
+    {
         return $this->sqlData["username"];
-    }  
+    }
 
-    public function getName(){
+    public function getName()
+    {
         return $this->sqlData["firstName"] . " " . $this->sqlData["lastName"];
     }
 
-    public function getUserFirstName(){
+    public function getUserFirstName()
+    {
         return $this->sqlData["firstName"];
-    }  
+    }
 
-    public function getUserLastName(){
+    public function getUserLastName()
+    {
         return $this->sqlData["lastName"];
-    }  
+    }
 
-    public function getUserProfilePic(){
+    public function getUserProfilePic()
+    {
         return $this->sqlData["profilePic"];
-    }  
+    }
 
-    public function getUserEmail(){
+    public function getUserEmail()
+    {
         return $this->sqlData["email"];
-    }  
-    
-    public function getSignUpDate() {
+    }
+
+    public function getSignUpDate()
+    {
         return $this->sqlData["singUpDate"];
     }
 
     //subscribers methods
 
-    public function isSubscribedTo($userTo){
+    public function isSubscribedTo($userTo)
+    {
         $query = $this->conn->prepare("SELECT * FROM subscribers WHERE userTo = :userTo AND userFrom = :userFrom");
         $query->bindParam(":userTo", $userTo);
         $query->bindParam(":userFrom", $username);
@@ -82,8 +100,9 @@ class User {
 
     //subscribers count
 
-    public function getSubscriberCount(){
-        
+    public function getSubscriberCount()
+    {
+
         $query = $this->conn->prepare("SELECT COUNT(*) FROM subscribers WHERE userTo = :userTo");
         $query->bindParam(":userTo", $username);
 
@@ -92,20 +111,19 @@ class User {
         $query->execute();
 
         return (int)$query->fetchColumn();
-    
     }
 
 
-    public function getSubscriptions() {
+    public function getSubscriptions()
+    {
         $query = $this->conn->prepare("SELECT u.* FROM subscribers s INNER JOIN users u ON u.username = s.userTo
                                         WHERE s.userFrom = ? ORDER BY u.username LIMIT 200");
         $query->execute([$this->getUsername()]);
 
         $subs = array();
-        while($row = $query->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
             $subs[] = new User($this->conn, $row);
         }
         return $subs;
     }
 }
-?>

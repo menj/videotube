@@ -1,4 +1,5 @@
 <?php
+
 /** Opaque counter id for a scope, a subject (address, account…) and a time window. */
 function rateLimitKey(string $scope, string $subject, int $windowSeconds): string
 {

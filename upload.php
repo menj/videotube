@@ -9,10 +9,10 @@ $pageTitle = 'Upload';
 require_once __DIR__ . '/includes/header.php';
 ?>
 <div class="column">
-<?php if ($userLoggedInObj->isVerified()): ?>
+<?php if ($userLoggedInObj->isVerified()) : ?>
     <p>Videos up to 50 MB. Conversion runs in the background and can take a few minutes.</p>
     <?= (new VideoDetailsFormProvider($conn))->createUploadForm() ?>
-<?php else: ?>
+<?php else : ?>
     <p>Uploading is available once your email address is verified.</p>
 <?php endif; ?>
 </div>

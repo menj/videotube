@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="csrf-token" content="<?= h(csrfToken()) ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<?php if (!empty($pageRefresh)): ?>
+<?php if (!empty($pageRefresh)) : ?>
     <meta http-equiv="refresh" content="<?= (int)$pageRefresh ?>">
 <?php endif; ?>
     <title><?= h(isset($pageTitle) ? $pageTitle . ' — VideoTube' : 'VideoTube') ?></title>

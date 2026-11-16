@@ -1,21 +1,25 @@
 <?php
-class TrendingProvider {
 
-    private $conn, $userLoggedInObj;
+class TrendingProvider
+{
+    private $conn;
+    private $userLoggedInObj;
 
-    public function __construct($conn, $userLoggedInObj) {
+    public function __construct($conn, $userLoggedInObj)
+    {
         $this->conn = $conn;
         $this->userLoggedInObj = $userLoggedInObj;
     }
 
-    public function getVideos() {
+    public function getVideos()
+    {
         $videos = array();
 
         $query = $this->conn->prepare("SELECT * FROM videos WHERE privacy=1 AND uploadDate >= now() - INTERVAL 7 DAY 
                                         ORDER BY views DESC LIMIT 15");
         $query->execute();
 
-        while($row = $query->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
             $video = new Video($this->conn, $row, $this->userLoggedInObj);
             array_push($videos, $video);
         }
@@ -23,4 +27,3 @@ class TrendingProvider {
         return $videos;
     }
 }
-?>

@@ -1,11 +1,11 @@
 <?php
   require_once("includes/config.php");
-  
+
   $account = new Account($conn);
 
-  if(isset($_POST["submitButton"])){
-    $username = FormSanitizer::sanitizingFormUser(inputText('username',$_POST));
-    $password = FormSanitizer::sanitizingFormPassword(inputText('password',$_POST));
+if (isset($_POST["submitButton"])) {
+    $username = FormSanitizer::sanitizingFormUser(inputText('username', $_POST));
+    $password = FormSanitizer::sanitizingFormPassword(inputText('password', $_POST));
 
     $failureKey = loginFailureKey($username);
     $throttled = rateLimitCount($conn, $failureKey) >= LOGIN_FAILURE_LIMIT;
@@ -14,29 +14,31 @@
         header('Retry-After: ' . LOGIN_FAILURE_WINDOW);
     }
     $wasSuccessful = !$throttled && $account->login($username, $password);
-    if (!$throttled && !$wasSuccessful) rateLimitHit($conn, $failureKey, LOGIN_FAILURE_WINDOW);
-
-    if($wasSuccessful){
-       startAuthenticatedSession($conn, $username);
-       header("Location: index.php");
-       exit;
+    if (!$throttled && !$wasSuccessful) {
+        rateLimitHit($conn, $failureKey, LOGIN_FAILURE_WINDOW);
     }
-  
 
-  }
-
-  function getInputValues($name){
-    if(isset($_POST[$name])){
-        echo h(inputText($name,$_POST));
+    if ($wasSuccessful) {
+        startAuthenticatedSession($conn, $username);
+        header("Location: index.php");
+        exit;
     }
-  }
+}
+
+function getInputValues($name)
+{
+    if (isset($_POST[$name])) {
+        echo h(inputText($name, $_POST));
+    }
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-<?php $pageTitle = 'Sign in'; require __DIR__ . '/includes/head.php'; ?>
+<?php $pageTitle = 'Sign in';
+require __DIR__ . '/includes/head.php'; ?>
 </head>
 
    <body><p><a href="account.php">Forgot password?</a></p> 
@@ -50,10 +52,12 @@
                 <div class="loginForm">
                 <form action="signIn.php" method="POST">
                    <!-- displaying error message if any -->
-                   <?php 
+                   <?php
                      echo $account->getError(Constants::$UserLoginFailed);
-                     if (!empty($throttled)) echo "<span class='errorMessage'>" . h(Constants::$loginThrottled) . "</span>";
-                   ?>
+                    if (!empty($throttled)) {
+                        echo "<span class='errorMessage'>" . h(Constants::$loginThrottled) . "</span>";
+                    }
+                    ?>
                    <input type="text" name="username" placeholder="User name" autocomplete='off'  value="<?php getInputValues('username') ?>" required>                   
              
                  

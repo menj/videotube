@@ -1,4 +1,5 @@
 <?php
+
 require_once __DIR__ . '/../media.php';
 
 /** Validates, transcodes and publishes one queued upload. Runs in the CLI worker only. */

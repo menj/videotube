@@ -15,8 +15,10 @@ require __DIR__ . '/includes/header.php';
 <div class="column">
     <h1>Your uploads</h1>
     <p>Uploads are processed in the background.<?= $waiting ? ' This page refreshes while a job is waiting.' : '' ?></p>
-    <?php if (!$jobs): ?><p>You have not uploaded anything yet. <a href="upload.php">Upload a video</a></p><?php endif; ?>
-    <?php foreach ($jobs as $job): ?>
+    <?php if (!$jobs) :
+        ?><p>You have not uploaded anything yet. <a href="upload.php">Upload a video</a></p><?php
+    endif; ?>
+    <?php foreach ($jobs as $job) : ?>
     <p>Upload #<?= (int)$job['id'] ?> — <?= h($job['status']) ?> <?= h($job['error']) ?></p>
     <?php endforeach; ?>
     <a href="profile.php?username=<?= rawurlencode($username) ?>">Your videos</a>

@@ -1,4 +1,5 @@
 <?php
+
 /** Previous/next links for listings that fetch one row more than they show. */
 final class Pager
 {

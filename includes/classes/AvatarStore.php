@@ -1,4 +1,5 @@
 <?php
+
 /** Stores profile pictures: every upload is re-encoded to a 256×256 JPEG, never served as sent. */
 final class AvatarStore
 {
