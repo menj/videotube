@@ -14,11 +14,11 @@ class VideoGrid
         $this->userLoggedInObj = $userLoggedInObj;
     }
 
-    public function create($videos, $title, $showFilter)
+    public function create($videos, $title, $showFilter, int $excludeVideoId = 0)
     {
 
         if ($videos === null) {
-            $gridItem = $this->generateItems();
+            $gridItem = $this->generateItems($excludeVideoId);
         } else {
             $gridItem = $this->generateItemsFromVideos($videos);
         }
@@ -35,7 +35,7 @@ class VideoGrid
                 </div>";
     }
 
-    public function generateItems()
+    public function generateItems(int $excludeVideoId = 0)
     {
         // ORDER BY RAND() sorts the whole table. Start at a random id instead, read the next public
         // videos by primary key, wrap around if the end is reached, then shuffle the handful found.
@@ -52,6 +52,7 @@ class VideoGrid
             $query->execute([$pivot]);
             $rows = array_merge($rows, $query->fetchAll(PDO::FETCH_ASSOC));
         }
+        $rows = array_filter($rows, static fn(array $row): bool => (int)$row["id"] !== $excludeVideoId);
         shuffle($rows);
 
         $elementHtml = "";

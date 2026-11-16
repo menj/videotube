@@ -841,3 +841,5 @@ form {
 .coverPhotoContainer { flex: none; overflow: hidden; }
 .coverPhotoContainer .coverPhoto { height: 100%; max-height: none; }
 .profileHeader .userInfoContainer .profileImage { margin-right: 16px; }
+.signInContainer .column .loginMessage { display: block; margin-top: 4px; }
+#sideNavContainer .heading ~ .navigationItem img { border-radius: 50%; object-fit: cover; }

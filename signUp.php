@@ -66,21 +66,21 @@ require __DIR__ . '/includes/head.php'; ?>
                    <?php
                      echo $account->getError(Constants::$firstNameCharacters);
                     ?>
-                   <input type="text" name="firstName" placeholder="first name" autocomplete='off' value="<?php getInputValues('firstName') ?>" required>
+                   <input type="text" name="firstName" placeholder="First name" autocomplete="given-name" value="<?php getInputValues('firstName') ?>" required>
 
                    
                    <!-- displaying error message if any -->
                    <?php
                      echo $account->getError(Constants::$lastNameCharacters);
                     ?>
-                   <input type="text" name="lastName" placeholder="last name" autocomplete='off' value="<?php getInputValues('lastName') ?>" required>
+                   <input type="text" name="lastName" placeholder="Last name" autocomplete="family-name" value="<?php getInputValues('lastName') ?>" required>
 
                    <!-- displaying error message if any -->
                    <?php
                      echo $account->getError(Constants::$usernameCharacters);
                      echo $account->getError(Constants::$usernameTaken);
                     ?>
-                   <input type="text" name="username" placeholder="User name" autocomplete='off' value="<?php getInputValues('username') ?>" required>
+                   <input type="text" name="username" placeholder="User name (5–25 letters, digits, _)" autocomplete="username" value="<?php getInputValues('username') ?>" required>
 
                    <!-- displaying error message if any -->
                    <?php
@@ -88,16 +88,16 @@ require __DIR__ . '/includes/head.php'; ?>
                      echo $account->getError(Constants::$emailInvalid);
                      echo $account->getError(Constants::$emailTaken);
                     ?>
-                   <input type="email" name="email" placeholder="email" autocomplete='off' value="<?php getInputValues('email') ?>" required>
-                   <input type="email" name="email2" placeholder="confirm email" autocomplete='off' value="<?php getInputValues('email2') ?>" required>
+                   <input type="email" name="email" placeholder="Email" autocomplete="email" value="<?php getInputValues('email') ?>" required>
+                   <input type="email" name="email2" placeholder="Confirm email" autocomplete="email" value="<?php getInputValues('email2') ?>" required>
 
                     <!-- displaying error message if any -->
                     <?php
                      echo $account->getError(Constants::$passwordDoNotMatch);
                      echo $account->getError(Constants::$passwordLength);
                     ?>
-                   <input type="password" name="password" placeholder="password" autocomplete='off' required>
-                   <input type="password" name="password2" placeholder="password" autocomplete='off' required>
+                   <input type="password" name="password" placeholder="Password (at least 12 characters)" autocomplete="new-password" required>
+                   <input type="password" name="password2" placeholder="Confirm password" autocomplete="new-password" required>
                    
                    <input type="submit" class="btn btn-primary" name="submitButton" value="SUBMIT">
 

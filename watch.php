@@ -30,7 +30,7 @@ $video->recordView($userLoggedInObj->getUsername());
 
 <div class="suggestions">
     <?php
-    echo (new VideoGrid($conn, $userLoggedInObj))->create(null, null, false);
+    echo (new VideoGrid($conn, $userLoggedInObj))->create(null, null, false, (int)$videoId);
     ?>
 </div>
 <?php require_once('includes/footer.php'); ?>

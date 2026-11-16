@@ -41,8 +41,8 @@ function getInputValues($name)
 require __DIR__ . '/includes/head.php'; ?>
 </head>
 
-   <body><p><a href="account.php">Forgot password?</a></p> 
-         <div class="signInContainer">
+   <body>
+<div class="signInContainer">
              <div class="column">
                 <div class="header">
                 <img src="./assets/images/icons/VideoTubeLogo.png" title="VideoTube home" alt="site-logo">
@@ -58,14 +58,15 @@ require __DIR__ . '/includes/head.php'; ?>
                         echo "<span class='errorMessage'>" . h(Constants::$loginThrottled) . "</span>";
                     }
                     ?>
-                   <input type="text" name="username" placeholder="User name" autocomplete='off'  value="<?php getInputValues('username') ?>" required>                   
+                   <input type="text" name="username" placeholder="User name" autocomplete="username"  value="<?php getInputValues('username') ?>" required>                   
              
                  
-                   <input type="password" name="password" placeholder="password" autocomplete='off'  required>
+                   <input type="password" name="password" placeholder="Password" autocomplete="current-password"  required>
                    <input type="submit" class="btn btn-primary" name="submitButton" value="SUBMIT">
                 </form>
                 </div>
-                <a href="signUp.php" class="loginMessage">Need an account? SignUp here!</a>
+                <a href="signUp.php" class="loginMessage">Need an account? Sign up here!</a>
+                <a href="account.php" class="loginMessage">Forgot your password?</a>
              </div>
          </div>
    </body>

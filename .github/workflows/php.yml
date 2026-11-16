@@ -26,6 +26,21 @@ jobs:
         run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
       - name: Regression tests (warnings and deprecations fail)
         run: composer test
+  style:
+    runs-on: ubuntu-latest
+    # Formatted and checked with PHP_CodeSniffer 3.7 while this job was written; a newer 3.x may
+    # flag more. Remove continue-on-error once this job has passed here.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - name: PSR-12 style check
+        run: composer lint
   reject-old-runtime:
     runs-on: ubuntu-latest
     steps:

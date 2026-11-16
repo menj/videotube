@@ -3,3 +3,5 @@
 /uploads/
 /vendor/
 /includes/.install-*
+/composer.phar
+.DS_Store
