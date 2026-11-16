@@ -10,9 +10,12 @@
     "ext-fileinfo": "*"
   },
   "require-dev": {
-    "ext-pdo_sqlite": "*"
+    "ext-pdo_sqlite": "*",
+    "squizlabs/php_codesniffer": "^3.13.6"
   },
   "scripts": {
-    "test": "php -d error_reporting=E_ALL tests/php84.php"
+    "test": "php -d error_reporting=E_ALL tests/php84.php",
+    "lint": "phpcs",
+    "format": "phpcbf"
   }
 }

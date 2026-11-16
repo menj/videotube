@@ -1,40 +1,28 @@
 <?php
-    require_once("includes/header.php");
-    require_once("includes/classes/SearchResultProvider.php");
+require_once("includes/header.php");
 
-    if(!isset($_GET["term"]) || $_GET["term"] == "") {
-        echo "You must enter a search term";
-        exit();
-    }
+$term = trim(inputText('term', $_GET));
+if ($term === "") {
+    echo "You must enter a search term";
+    require_once("includes/footer.php");
+    exit();
+}
+$orderBy = inputText('orderBy', $_GET) === "uploadDate" ? "uploadDate" : "views";
+$page = Pager::current();
 
-    $term = inputText('term',$_GET);
-
-    if(!isset($_GET["orderBy"]) || $_GET["orderBy"] == "views") {
-        $orderBy = "views";
-    }
-    else {
-        $orderBy = "uploadDate";
-    }
-     
-    $searchResultProvider = new SearchResultProvider($conn, $userLoggedInObj);
-    $videos = $searchResultProvider->getVideos($term, $orderBy);
-
-    $videoGrid = new VideoGrid($conn, $userLoggedInObj);
-
+$searchResultProvider = new SearchResultProvider($conn, $userLoggedInObj);
+$total = $searchResultProvider->countVideos($term);
+$videos = $searchResultProvider->getVideos($term, $orderBy, $page);
+$videoGrid = new VideoGrid($conn, $userLoggedInObj);
 ?>
-  <div class="largeVideoGridContainer">
-      <?php
-        if(sizeof($videos) > 0) {
-           echo $videoGrid->createLarge($videos, sizeof($videos) . " videos found", true);
-        }
-        else {
-            echo "No result found";
-        }
-      ?>
-  </div>
-
-
-
-<?php
-require_once("includes/footer.php");
-?>
+<div class="largeVideoGridContainer">
+    <?php
+    if (count($videos) > 0) {
+        echo $videoGrid->createLarge($videos, $total . " videos found", true);
+        echo Pager::links('search.php', ['term' => $term, 'orderBy' => $orderBy], $page, Pager::offset($page) + count($videos) < $total);
+    } else {
+        echo "No result found";
+    }
+    ?>
+</div>
+<?php require_once("includes/footer.php"); ?>

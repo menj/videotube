@@ -1,8 +1,9 @@
 <?php require_once('includes/header.php');
- 
- if(!isset($_SESSION["userLoggedIn"])){
-     header("Location: signIn.php");
- }
+
+if (!isset($_SESSION["userLoggedIn"])) {
+    header("Location: signIn.php");
+    exit;
+}
 
 ?>
 
@@ -11,9 +12,9 @@
     $subscriptionsProvider = new SubscriptionsProvider($conn, $userLoggedInObj);
     $subscriptionVideos = $subscriptionsProvider->getVideos();
 
-    $videoGrid = new VideoGrid($conn, $userLoggedInObj->getUsername());
+    $videoGrid = new VideoGrid($conn, $userLoggedInObj);
 
-    if(User::isLoggedIn() && sizeof($subscriptionVideos) > 0) {
+    if (User::isLoggedIn() && sizeof($subscriptionVideos) > 0) {
         echo $videoGrid->create($subscriptionVideos, "Subscriptions", false);
     }
 

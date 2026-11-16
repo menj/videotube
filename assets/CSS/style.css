@@ -815,3 +815,31 @@ form {
   margin-right: auto;
 }
 .videoGridItem .description { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* The side navigation starts closed; the menu button toggles it. */
+#sideNavContainer { display: none; }
+#sideNavContainer.open { display: flex; }
+
+.itemContainer .controls .deleteComment { color: #a33; }
+.commentSection .loadMoreComments { display: block; margin: 8px auto 24px; }
+.pager { display: flex; justify-content: center; gap: 24px; padding: 16px 0 32px; }
+
+/* Settings, video editing and destructive actions */
+.pictureRow { display: flex; align-items: center; gap: 16px; }
+.pictureRow .profilePicture { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+.thumbnailChoices { display: flex; flex-wrap: wrap; gap: 12px; }
+.thumbnailChoices legend { font-size: 1rem; width: 100%; }
+.thumbnailChoices label { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.thumbnailChoices img { width: 160px; border: 2px solid transparent; }
+.thumbnailChoices input:checked + img { border-color: #007bff; }
+.editVideo .dangerZone { margin-top: 32px; padding-top: 16px; border-top: 1px solid #ddd; }
+.dangerZone h2 { font-size: 1.25rem; }
+.profilePicture, .profileImage { object-fit: cover; border-radius: 50%; }
+#mastHeadContainer .rightIcons .profilePicture { padding: 4px; }
+
+/* The channel cover keeps its 200px band instead of growing to the image's own height. */
+.coverPhotoContainer { flex: none; overflow: hidden; }
+.coverPhotoContainer .coverPhoto { height: 100%; max-height: none; }
+.profileHeader .userInfoContainer .profileImage { margin-right: 16px; }
+.signInContainer .column .loginMessage { display: block; margin-top: 4px; }
+#sideNavContainer .heading ~ .navigationItem img { border-radius: 50%; object-fit: cover; }

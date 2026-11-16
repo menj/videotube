@@ -1,5 +1,11 @@
 # Include inside your server block; configure HTTPS and PHP-FPM for your host.
 location ~ ^/(includes|database|tests|bin|uploads)(/|$) { deny all; }
+location ~ ^/(composer\.(json|lock)|phpcs\.xml\.dist|INSTALL\.md|TODO\.md)$ { deny all; }
 location ~ /\. { deny all; }
 client_max_body_size 52m;
 # PHP-FPM must receive HTTPS=on when this server terminates TLS.
+
+# Optional: let Nginx send videos, thumbnails and profile pictures itself once PHP has authorised
+# the request. Give PHP VIDEOTUBE_ACCEL_REDIRECT=/protected-media/ and point the alias at the
+# media storage directory (VIDEOTUBE_STORAGE, or <application>/uploads/ when that is unset).
+# location /protected-media/ { internal; alias /var/lib/videotube/media/; }

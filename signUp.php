@@ -1,76 +1,55 @@
-<?php 
+<?php
   require_once("includes/config.php");
-  require_once("includes/classes/Account.php");
-  require_once("includes/classes/Constants.php");
-  require_once("includes/classes/FormSanitizer.php");
- 
+
 
   $account = new Account($conn);
 
-  if(isset($_POST["submitButton"])){
-      
-      
-      //firstName & lastName
-      $firstName = FormSanitizer::sanitizingFormString(inputText('firstName',$_POST));
-      $lastName = FormSanitizer::sanitizingFormString(inputText('lastName',$_POST));
-  
-      //Username
-      $username = FormSanitizer::sanitizingFormUser(inputText('username',$_POST));
+if (isset($_POST["submitButton"])) {
+    //firstName & lastName
+    $firstName = FormSanitizer::sanitizingFormString(inputText('firstName', $_POST));
+    $lastName = FormSanitizer::sanitizingFormString(inputText('lastName', $_POST));
 
-      //emails
-      $email = FormSanitizer::sanitizingFormEmail(inputText('email',$_POST));
-      $email2 = FormSanitizer::sanitizingFormEmail(inputText('email2',$_POST));
+    //Username
+    $username = FormSanitizer::sanitizingFormUser(inputText('username', $_POST));
 
-      //password
-      $password = FormSanitizer::sanitizingFormPassword(inputText('password',$_POST));
-      $password2 = FormSanitizer::sanitizingFormPassword(inputText('password2',$_POST));
-     
-     $wasSuccessful = $account->register($firstName, $lastName, $username, $email, $email2, $password, $password2);
-      
-     if($wasSuccessful){
+    //emails
+    $email = FormSanitizer::sanitizingFormEmail(inputText('email', $_POST));
+    $email2 = FormSanitizer::sanitizingFormEmail(inputText('email2', $_POST));
+
+    //password
+    $password = FormSanitizer::sanitizingFormPassword(inputText('password', $_POST));
+    $password2 = FormSanitizer::sanitizingFormPassword(inputText('password2', $_POST));
+
+    $wasSuccessful = $account->register($firstName, $lastName, $username, $email, $email2, $password, $password2);
+
+    if ($wasSuccessful) {
         startAuthenticatedSession($conn, $username);
-        header("Location: account.php");
-       exit;
-     }
-     else{
-       echo "login failed";
-     }
-  }
+        try {
+            (new AccountRecovery($conn))->issue($email, 'verify');
+        } catch (Throwable $e) {
+              error_log('Account mail: ' . $e->getMessage());
+        }
+        header("Location: account.php?sent=1");
+        exit;
+    }
+}
 
-     function getInputValues($name){
-       if(isset($_POST[$name])){
-           echo h(inputText($name,$_POST));
-       }
-     }
-  
-  
+function getInputValues($name)
+{
+    if (isset($_POST[$name])) {
+           echo h(inputText($name, $_POST));
+    }
+}
+
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoTube</title>
-    <!-- favicon -->
-    <link href="assets/images/icons/favicon2.jpg" rel="icon">
-    <!-- Bootstrap CDN -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="./assets/CSS/style.css">
-
-    <!-- Jquery CDN-->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net</br>pm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous">
-    </script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
-        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous">
-    </script>
-<link rel="stylesheet" href="assets/CSS/fonts.css">
+<?php $pageTitle = 'Sign up';
+require __DIR__ . '/includes/head.php'; ?>
 </head>
 
 <body>
@@ -84,41 +63,41 @@
             <div class="loginForm">
                 <form action="signUp.php" method="POST">
                    <!-- displaying error message if any -->
-                   <?php 
+                   <?php
                      echo $account->getError(Constants::$firstNameCharacters);
-                   ?>
-                   <input type="text" name="firstName" placeholder="first name" autocomplete='off' value="<?php getInputValues('firstName') ?>" required>
+                    ?>
+                   <input type="text" name="firstName" placeholder="First name" autocomplete="given-name" value="<?php getInputValues('firstName') ?>" required>
 
                    
                    <!-- displaying error message if any -->
-                   <?php 
+                   <?php
                      echo $account->getError(Constants::$lastNameCharacters);
-                   ?>
-                   <input type="text" name="lastName" placeholder="last name" autocomplete='off' value="<?php getInputValues('lastName') ?>" required>
+                    ?>
+                   <input type="text" name="lastName" placeholder="Last name" autocomplete="family-name" value="<?php getInputValues('lastName') ?>" required>
 
                    <!-- displaying error message if any -->
-                   <?php 
+                   <?php
                      echo $account->getError(Constants::$usernameCharacters);
-                     echo $account->getError(Constants::$usernameTaken); 
-                   ?>
-                   <input type="text" name="username" placeholder="User name" autocomplete='off' value="<?php getInputValues('username') ?>" required>
+                     echo $account->getError(Constants::$usernameTaken);
+                    ?>
+                   <input type="text" name="username" placeholder="User name (5–25 letters, digits, _)" autocomplete="username" value="<?php getInputValues('username') ?>" required>
 
                    <!-- displaying error message if any -->
-                   <?php 
+                   <?php
                      echo $account->getError(Constants::$emailsDoNotMatch);
-                     echo $account->getError(Constants::$emailTaken); 
-                   ?>
-                   <input type="email" name="email" placeholder="email" autocomplete='off' value="<?php getInputValues('email') ?>" required>
-                   <input type="email" name="email2" placeholder="confirm email" autocomplete='off' value="<?php getInputValues('email2') ?>" required>
+                     echo $account->getError(Constants::$emailInvalid);
+                     echo $account->getError(Constants::$emailTaken);
+                    ?>
+                   <input type="email" name="email" placeholder="Email" autocomplete="email" value="<?php getInputValues('email') ?>" required>
+                   <input type="email" name="email2" placeholder="Confirm email" autocomplete="email" value="<?php getInputValues('email2') ?>" required>
 
                     <!-- displaying error message if any -->
-                    <?php 
+                    <?php
                      echo $account->getError(Constants::$passwordDoNotMatch);
-                     echo $account->getError(Constants::$passwordNotAlphaNumeric); 
-                     echo $account->getError(Constants::$passwordLength); 
-                   ?>
-                   <input type="password" name="password" placeholder="password" autocomplete='off' required>
-                   <input type="password" name="password2" placeholder="password" autocomplete='off' required>
+                     echo $account->getError(Constants::$passwordLength);
+                    ?>
+                   <input type="password" name="password" placeholder="Password (at least 12 characters)" autocomplete="new-password" required>
+                   <input type="password" name="password2" placeholder="Confirm password" autocomplete="new-password" required>
                    
                    <input type="submit" class="btn btn-primary" name="submitButton" value="SUBMIT">
 

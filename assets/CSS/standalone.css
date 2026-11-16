@@ -1,0 +1,12 @@
+/* Plain pages outside the main layout: installer, account help, administration, log out. */
+body.standalone { margin: 2rem auto; padding: 1rem; line-height: 1.5; }
+body.standalone.narrow { max-width: 640px; font-size: 19px; background: #f5f6fa; }
+body.standalone.wide { max-width: 1200px; }
+.standalone label { display: block; margin: 16px 0; }
+.standalone.narrow input { display: block; box-sizing: border-box; width: 100%; padding: 10px; }
+.standalone button { padding: 12px 24px; margin: .25rem; }
+.standalone table { border-collapse: collapse; width: 100%; }
+.standalone td, .standalone th { padding: .6rem; border: 1px solid #ccc; overflow-wrap: anywhere; text-align: left; }
+.standalone td form { display: inline; }
+.standalone td button { padding: 6px 12px; }
+.standalone nav a { margin-right: 1rem; }

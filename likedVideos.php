@@ -1,8 +1,7 @@
 <?php
 require_once("includes/header.php");
-require_once("includes/classes/LikedVideosProvider.php");
 
-if(!User::isLoggedIn()) {
+if (!User::isLoggedIn()) {
     header("Location: signIn.php");
     exit;
 }
@@ -14,11 +13,11 @@ $videoGrid = new VideoGrid($conn, $userLoggedInObj);
 ?>
 <div class="largeVideoGridContainer">
     <?php
-    if(sizeof($videos) > 0) {
+    if (sizeof($videos) > 0) {
         echo $videoGrid->createLarge($videos, "Videos that you have liked", false);
-    }
-    else {
+    } else {
         echo "No videos to show";
     }
     ?>
 </div>
+<?php require_once("includes/footer.php"); ?>

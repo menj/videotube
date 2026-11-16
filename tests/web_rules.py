@@ -4,7 +4,7 @@ root=pathlib.Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='videotube-web-') as tmp:
  base=pathlib.Path(tmp);site=base/'site';site.mkdir()
  shutil.copy(root/'.htaccess',site/'.htaccess')
- sensitive=['includes/local.php','database/schema.sql','tests/install.php','bin/worker.php','uploads/videos/private.mp4','.git/config','includes/.install-secret']
+ sensitive=['includes/local.php','database/schema.sql','tests/install.php','bin/worker.php','uploads/videos/private.mp4','.git/config','includes/.install-secret','composer.json','composer.lock','phpcs.xml.dist','INSTALL.md']
  for name in sensitive:
   path=site/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('SECRET')
  (site/'index.txt').write_text('public fixture')

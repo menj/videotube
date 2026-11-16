@@ -1,17 +1,6 @@
 <?php
-require_once __DIR__ . '/../includes/ajax.php'; 
-    require_once("../includes/config.php");
-    require_once("../includes/classes/Comment.php");
-    require_once("../includes/classes/User.php");
 
-    
-        $videoId = $_POST["videoId"]; 
-        $username = ($_SESSION["userLoggedIn"] ?? "");
-        $commentId = $_POST["commentId"];
+require_once __DIR__ . '/../includes/ajax.php';
 
-        $userLoggedInObj = new User($conn, $username);
-
-        $comment = new Comment($conn, $commentId, $userLoggedInObj, $videoId);
-        echo $comment->disLike();
-if ($conn->inTransaction()) $conn->commit();
-?>
+echo (new Comment($conn, $commentId, $viewerObj, $videoId))->disLike();
+$conn->commit();

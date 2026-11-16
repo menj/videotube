@@ -12,5 +12,6 @@ TimeoutStartSec=6h
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
+# Point this at the media storage directory (VIDEOTUBE_STORAGE) when it is outside the application.
 ReadWritePaths=/var/www/videotube/uploads
 # Use an EnvironmentFile outside the document root if DB/media settings use env vars.

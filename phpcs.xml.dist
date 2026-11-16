@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ruleset name="VideoTube">
+    <description>PSR-12 for the application's PHP, with the exceptions this codebase needs.</description>
+
+    <file>.</file>
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <exclude-pattern>assets/*</exclude-pattern>
+    <exclude-pattern>uploads/*</exclude-pattern>
+    <exclude-pattern>includes/local.php</exclude-pattern>
+    <!-- Closing markup only. -->
+    <exclude-pattern>includes/footer.php</exclude-pattern>
+    <arg name="extensions" value="php"/>
+    <arg value="sp"/>
+
+    <rule ref="PSR12">
+        <!-- Classes are loaded by includes/autoload.php from one global namespace. -->
+        <exclude name="PSR1.Classes.ClassDeclaration.MissingNamespace"/>
+        <!-- Entry scripts and bootstrap files both define helpers and act on the request. -->
+        <exclude name="PSR1.Files.SideEffects"/>
+        <!-- Long SQL statements and HTML strings stay on one line. -->
+        <exclude name="Generic.Files.LineLength"/>
+        <!-- Historical public method name kept for compatibility. -->
+        <exclude name="PSR1.Methods.CamelCapsMethodName"/>
+    </rule>
+</ruleset>

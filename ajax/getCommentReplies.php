@@ -1,15 +1,7 @@
 <?php
+
 require_once __DIR__ . '/../includes/ajax.php';
-require_once("../includes/config.php"); 
-require_once("../includes/classes/Comment.php"); 
-require_once("../includes/classes/User.php"); 
 
-$username = ($_SESSION["userLoggedIn"] ?? "");
-$videoId = $_POST["videoId"];
-$commentId = $_POST["commentId"];
-
-$userLoggedInObj = new User($conn, $username);
-$comment = new Comment($conn, $commentId, $userLoggedInObj, $videoId);
-
-echo $comment->getReplies();
-?>
+foreach ((new CommentRepository($conn, $viewerObj))->replies($videoId, $commentId) as $reply) {
+    echo $reply->create();
+}

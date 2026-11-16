@@ -1,99 +1,81 @@
-<?php 
-  class ButtonProvider{
+<?php
 
-    public static function createButton($text, $imageSrc, $action, $class){
-      $text = htmlspecialchars((string)$text,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-      $imageSrc = htmlspecialchars((string)$imageSrc,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-      $action = htmlspecialchars((string)$action,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-      $class = htmlspecialchars((string)$class,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
+class ButtonProvider
+{
+    /**
+     * Buttons carry no inline script: behaviour is attached by assets/JS through data-* attributes.
+     *
+     * @param array<string,scalar|null>|null $data rendered as data-* attributes; "action" names the handler
+     */
+    public static function createButton($text, $imageSrc, ?array $data, $class): string
+    {
+        $image = $imageSrc ? "<img src=\"" . h($imageSrc) . "\" alt=\"\">" : "";
 
-        $image = ($imageSrc == null) ? "" : "<img src='$imageSrc'>";
-        
-        // Change action if needed.
-        return "
-            <button class = '$class' onclick = '$action' >
-               $image
-            <span class='text'>$text</span> 
-            </button>
-            "
-            ;
-
+        return "<button class=\"" . h($class) . "\"" . self::dataAttributes($data) . ">
+                    $image
+                    <span class=\"text\">" . h($text) . "</span>
+                </button>";
     }
 
-    
-    public static function createHyperlinkButton($text, $imageSrc, $href, $class){
-      $text = htmlspecialchars((string)$text,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-      $imageSrc = htmlspecialchars((string)$imageSrc,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-      $href = htmlspecialchars((string)$href,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-      $class = htmlspecialchars((string)$class,ENT_QUOTES | ENT_SUBSTITUTE,'UTF-8');
-
-      $image = ($imageSrc == null) ? "" : "<img src='$imageSrc'>";
-      
-      // Change action if needed.
-      return "
-      <a href='$href'>
-          <button class = '$class'  >
-             $image
-            <span class='text'>$text</span> 
-          </button>
-      </a>    
-          "
-          ;
-
-  }
-
-    public static function createProfileButton($conn, $uploadedBy){
-      $userObj = new User($conn, $uploadedBy);
-      $profilePic = htmlspecialchars($userObj->getUserProfilePic(),ENT_QUOTES,'UTF-8');
-      $link = 'profile.php?username=' . rawurlencode($uploadedBy);
-
-      return "
-              <a href = '$link'>
-                <img src = '$profilePic' class='profilePicture' >
-              </a>
-            ";
+    public static function dataAttributes(?array $data): string
+    {
+        $html = "";
+        foreach ($data ?? [] as $name => $value) {
+            $html .= " data-" . h($name) . "=\"" . h($value) . "\"";
+        }
+        return $html;
     }
 
-     public static function createEditButton($videoId){
-       $href = "editVideo.php?videoId=$videoId";
+    public static function createHyperlinkButton($text, $imageSrc, $href, $class): string
+    {
+        $image = $imageSrc ? "<img src=\"" . h($imageSrc) . "\" alt=\"\">" : "";
 
-       $button = ButtonProvider::createHyperlinkButton("EDIT VIDEO", null, $href, "edit button");
+        return "<a href=\"" . h($href) . "\">
+                    <button class=\"" . h($class) . "\">
+                        $image
+                        <span class=\"text\">" . h($text) . "</span>
+                    </button>
+                </a>";
+    }
 
-       return "<div class='editVideoButtonContainer'>
-                 $button
-               </div>";
-     }
+    /** Avatar linking to a channel, for callers that already know the picture. */
+    public static function profileLink(string $username, string $profilePic): string
+    {
+        return "<a href=\"profile.php?username=" . h(rawurlencode($username)) . "\">
+                    <img src=\"" . h($profilePic) . "\" class=\"profilePicture\" alt=\"\">
+                </a>";
+    }
 
-     public static function createSubscriberButton($conn, $userToObj, $userLoggedInObj){
-           $userTo = $userToObj->getUsername();
-           $userLoggedIn = $userLoggedInObj->getUsername();
+    public static function createProfileButton($conn, $username): string
+    {
+        $userObj = new User($conn, $username);
+        return self::profileLink((string)$username, $userObj->getUserProfilePic());
+    }
 
-           $isSubscribedTo = $userLoggedInObj->isSubscribedTo($userTo);
-           $buttonText = $isSubscribedTo ? "SUBSCRIBED" : "SUBSCRIBE";
-           $buttonText .=" ". $userToObj->getSubscriberCount(); 
-           
-           $buttonClass = $isSubscribedTo ? "unsubscribe button" : "subscribe button";
-           $action = 'subscribe(' . json_encode($userTo) . ',' . json_encode($userLoggedIn) . ',this)';
+    public static function createEditButton($videoId): string
+    {
+        $button = self::createHyperlinkButton("EDIT VIDEO", null, "editVideo.php?videoId=" . (int)$videoId, "edit button");
 
-           $button = ButtonProvider::createButton($buttonText, null, $action, $buttonClass);
+        return "<div class=\"editVideoButtonContainer\">$button</div>";
+    }
 
-           return "<div class = subscribeButtonContainer>
-                     $button
-                   </div>";
-     }
+    public static function createSubscriberButton($conn, $userToObj, $userLoggedInObj): string
+    {
+        $userTo = $userToObj->getUsername();
+        $isSubscribedTo = $userLoggedInObj->isSubscribedTo($userTo);
+        $buttonText = ($isSubscribedTo ? "SUBSCRIBED" : "SUBSCRIBE") . " " . $userToObj->getSubscriberCount();
+        $buttonClass = $isSubscribedTo ? "unsubscribe button" : "subscribe button";
 
-         
-    public static function createUserProfileNavigationButton($conn, $username) {
-      if(User::isLoggedIn()) {
-          return ButtonProvider::createProfileButton($conn, $username);
-      }
-      else {
-          return "<a href='signIn.php'>
-                      <span class='signInLink'>SIGN IN</span>
-                  </a>";
-      }
-  }
+        $button = self::createButton($buttonText, null, ["action" => "subscribe", "user-to" => $userTo], $buttonClass);
 
-  }
+        return "<div class=\"subscribeButtonContainer\">$button</div>";
+    }
 
-?>
+    public static function createUserProfileNavigationButton($userLoggedInObj): string
+    {
+        if (User::isLoggedIn()) {
+            return self::profileLink($userLoggedInObj->getUsername(), $userLoggedInObj->getUserProfilePic());
+        }
+        return "<a href=\"signIn.php\"><span class=\"signInLink\">SIGN IN</span></a>";
+    }
+}

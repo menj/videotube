@@ -1,65 +1,48 @@
 <?php
   require_once("includes/config.php");
-  require_once("includes/classes/Account.php");
-  require_once("includes/classes/Constants.php");
-  require_once("includes/classes/FormSanitizer.php");
-  
+
   $account = new Account($conn);
 
-  if(isset($_POST["submitButton"])){
-    $username = FormSanitizer::sanitizingFormUser(inputText('username',$_POST));
-    $password = FormSanitizer::sanitizingFormPassword(inputText('password',$_POST));
+if (isset($_POST["submitButton"])) {
+    $username = FormSanitizer::sanitizingFormUser(inputText('username', $_POST));
+    $password = FormSanitizer::sanitizingFormPassword(inputText('password', $_POST));
 
-    $wasSuccessful = $account->login($username, $password);
-      
-    if($wasSuccessful){
-       startAuthenticatedSession($conn, $username);
-       header("Location: index.php");
-       exit;
+    $failureKey = loginFailureKey($username);
+    $throttled = rateLimitCount($conn, $failureKey) >= LOGIN_FAILURE_LIMIT;
+    if ($throttled) {
+        http_response_code(429);
+        header('Retry-After: ' . LOGIN_FAILURE_WINDOW);
     }
-    else{
-       echo "Login failed";
+    $wasSuccessful = !$throttled && $account->login($username, $password);
+    if (!$throttled && !$wasSuccessful) {
+        rateLimitHit($conn, $failureKey, LOGIN_FAILURE_WINDOW);
     }
-  
 
-  }
-
-  function getInputValues($name){
-    if(isset($_POST[$name])){
-        echo h(inputText($name,$_POST));
+    if ($wasSuccessful) {
+        startAuthenticatedSession($conn, $username);
+        header("Location: index.php");
+        exit;
     }
-  }
+}
+
+function getInputValues($name)
+{
+    if (isset($_POST[$name])) {
+        echo h(inputText($name, $_POST));
+    }
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoTube</title>
-    <!-- favicon -->
-    <link href="assets/images/icons/favicon2.jpg" rel="icon">
-    <!-- Bootstrap CDN -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="./assets/CSS/style.css">
-
-    <!-- Jquery CDN-->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous">
-    </script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
-        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous">
-    </script>
-  <link rel="stylesheet" href="assets/CSS/fonts.css">
+<?php $pageTitle = 'Sign in';
+require __DIR__ . '/includes/head.php'; ?>
 </head>
 
-   <body><p><a href="account.php">Forgot password?</a></p> 
-         <div class="signInContainer">
+   <body>
+<div class="signInContainer">
              <div class="column">
                 <div class="header">
                 <img src="./assets/images/icons/VideoTubeLogo.png" title="VideoTube home" alt="site-logo">
@@ -69,17 +52,21 @@
                 <div class="loginForm">
                 <form action="signIn.php" method="POST">
                    <!-- displaying error message if any -->
-                   <?php 
+                   <?php
                      echo $account->getError(Constants::$UserLoginFailed);
-                   ?>
-                   <input type="text" name="username" placeholder="User name" autocomplete='off'  value="<?php getInputValues('username') ?>" required>                   
+                    if (!empty($throttled)) {
+                        echo "<span class='errorMessage'>" . h(Constants::$loginThrottled) . "</span>";
+                    }
+                    ?>
+                   <input type="text" name="username" placeholder="User name" autocomplete="username"  value="<?php getInputValues('username') ?>" required>                   
              
                  
-                   <input type="password" name="password" placeholder="password" autocomplete='off'  required>
+                   <input type="password" name="password" placeholder="Password" autocomplete="current-password"  required>
                    <input type="submit" class="btn btn-primary" name="submitButton" value="SUBMIT">
                 </form>
                 </div>
-                <a href="signUp.php" class="loginMessage">Need an account? SignUp here!</a>
+                <a href="signUp.php" class="loginMessage">Need an account? Sign up here!</a>
+                <a href="account.php" class="loginMessage">Forgot your password?</a>
              </div>
          </div>
    </body>
